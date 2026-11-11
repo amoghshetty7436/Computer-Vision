@@ -1,0 +1,13 @@
+pycolmap>=4.0
+opencv-python-headless
+numpy
+pandas
+scipy
+pillow
+matplotlib
+torch
+kornia>=0.8
+# GPU tier only (diffusion conditions)
+diffusers
+transformers
+accelerate
