@@ -2,7 +2,7 @@
 # One-time setup on a Perlmutter LOGIN node:  bash perlmutter/setup.sh
 # Creates venv, downloads datasets + model weights, prepares the image subsets
 # (so the parallel array tasks never race on downloads).
-set -euo pipefail
+set -eo pipefail
 export SFMROB_ROOT=${SFMROB_ROOT:-$SCRATCH/sfmrob}
 mkdir -p $SFMROB_ROOT/{data,work,hf,torch,logs}
 module load python
