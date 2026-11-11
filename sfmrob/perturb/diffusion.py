@@ -24,7 +24,8 @@ STRENGTH = [0.1, 0.2, 0.3, 0.45, 0.6]
 @lru_cache(1)
 def _img2img():
     from diffusers import AutoPipelineForImage2Image
-    p = AutoPipelineForImage2Image.from_pretrained(IMG2IMG_MODEL, torch_dtype=torch.float16, variant="fp16")
+    # fp32: the fp16 VAE overflows at ~1024 px and returns black/NaN images
+    p = AutoPipelineForImage2Image.from_pretrained(IMG2IMG_MODEL, torch_dtype=torch.float32)
     p.set_progress_bar_config(disable=True)
     return p.to("cuda")
 
@@ -32,7 +33,7 @@ def _img2img():
 @lru_cache(1)
 def _upscaler():
     from diffusers import StableDiffusionUpscalePipeline
-    p = StableDiffusionUpscalePipeline.from_pretrained(UPSCALER_MODEL, torch_dtype=torch.float16)
+    p = StableDiffusionUpscalePipeline.from_pretrained(UPSCALER_MODEL, torch_dtype=torch.float32)
     p.set_progress_bar_config(disable=True)
     p.enable_attention_slicing()
     return p.to("cuda")
@@ -44,13 +45,16 @@ def _to_mult(img, m=64):
 
 
 @torch.no_grad()
-def sd_img2img(img, s, rng, depth=None, steps=10):
+def sdturbo_img2img(img, s, rng, depth=None, steps=10):
     h, w = img.shape[:2]
     x = Image.fromarray(_to_mult(img))
     g = torch.Generator("cuda").manual_seed(int(rng.integers(2**31)))
     out = _img2img()(prompt="a photo", image=x, strength=STRENGTH[s - 1], num_inference_steps=steps,
                      guidance_scale=0.0, generator=g).images[0]
-    return cv2.resize(np.asarray(out), (w, h), interpolation=cv2.INTER_LANCZOS4)
+    out = np.asarray(out)
+    if out.mean() < 3:  # guard against silent NaN/black outputs
+        raise RuntimeError("diffusion img2img returned a black image")
+    return cv2.resize(out, (w, h), interpolation=cv2.INTER_LANCZOS4)
 
 
 @torch.no_grad()

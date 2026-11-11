@@ -67,7 +67,7 @@ def conditions(exp: str, full: bool) -> list[dict]:
         for p in ["regen_esrgan", "inpaint_lama", "blackout"]:
             out += [dict(perturb=p, severity=s, frac=1.0, mitigation="none", **cfg) for s in sev]
         if full:  # diffusion img2img (GPU + HF): strength ladder
-            out += [dict(perturb="sd_img2img", severity=s, frac=1.0, mitigation="none", **cfg) for s in sev]
+            out += [dict(perturb="sdturbo_img2img", severity=s, frac=1.0, mitigation="none", **cfg) for s in sev]
     elif exp == "e3_superres":
         for f in ([2, 4, 8] if full else [4, 8]):
             for m in ["lowres", "bicubic", "unsharp_bicubic", "realesrgan"] + (["sd_x4"] if full and f >= 4 else []):
@@ -136,9 +136,9 @@ def make_condition_images(clean_dir: Path, names: list[str], c: dict, seed: int,
                 res = cv2.resize(res, (w, h), interpolation=cv2.INTER_AREA)
         elif p == "crowd":
             res, person_mask = C.add_crowd(img, C.CROWD_LEVELS[c["severity"]], rng)
-        elif p == "sd_img2img":
-            from .perturb.diffusion import sd_img2img
-            res = sd_img2img(img, c["severity"], rng)
+        elif p == "sdturbo_img2img":
+            from .perturb.diffusion import sdturbo_img2img
+            res = sdturbo_img2img(img, c["severity"], rng)
         else:
             res = reg[p](img, c["severity"], rng, depths.get(n) if depths else None) \
                 if p in WEATHER else reg[p](img, c["severity"], rng)
@@ -159,7 +159,7 @@ def _sd_upscale(low, f):
     return sd_x4_upscale(low, f)
 
 
-GPU_GEN = {"regen_esrgan", "inpaint_lama", "sd_img2img", "sr_realesrgan", "sr_sd_x4"}
+GPU_GEN = {"regen_esrgan", "inpaint_lama", "sdturbo_img2img", "sr_realesrgan", "sr_sd_x4"}
 
 
 def needs_gpu_gen(c):

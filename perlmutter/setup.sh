@@ -29,7 +29,7 @@ ck = Path(os.environ["TORCH_HOME"]) / "hub" / "checkpoints"; ck.mkdir(parents=Tr
 urllib.request.urlretrieve("https://raw.githubusercontent.com/Shiaoming/ALIKED/main/models/aliked-n16.pth", ck / "aliked-n16.pth")
 import kornia.feature as KF; KF.LightGlue("aliked")
 from huggingface_hub import snapshot_download
-snapshot_download("stabilityai/sd-turbo", allow_patterns=["*.json", "*.txt", "*fp16.safetensors"])
+snapshot_download("stabilityai/sd-turbo", allow_patterns=["*.json", "*.txt", "*.safetensors"])
 snapshot_download("stabilityai/stable-diffusion-x4-upscaler", allow_patterns=["*.json", "*.txt", "*.safetensors"])
 print("setup done")
 open(os.environ["SFMROB_ROOT"] + "/.setup_ok", "w").write("ok")
