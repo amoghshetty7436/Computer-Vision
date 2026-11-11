@@ -21,7 +21,7 @@ from sfmrob.perturb import generative as G
 from sfmrob.perturb.crowds import person_bank
 for s in ["gerrard-hall", "south-building", "person-hall"]:
     D.fetch_colmap_scene(s)
-    D.prepare_colmap_subset(s, 60, 1600, Path(os.environ["SFMROB_WORK"]) / f"{s}_60_1600" / "clean")
+    D.prepare_colmap_subset(s, 40, 1280, Path(os.environ["SFMROB_WORK"]) / f"{s}_40_1280" / "clean")
     print("prepared", s, flush=True)
 person_bank()
 G._weights("RealESRGAN_x4plus.pth"); G._weights("big-lama.pt")
