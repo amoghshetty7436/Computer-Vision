@@ -57,7 +57,8 @@ def agg(df, keys, metrics=(METRIC, "reg_frac")):
             mu, lo, hi = ci(g[m])
             r[m], r[m + "_lo"], r[m + "_hi"] = mu, lo, hi
         rows.append(r)
-    return pd.DataFrame(rows)
+    cols = list(keys) + ["n"] + [m + sfx for m in metrics for sfx in ("", "_lo", "_hi")]
+    return pd.DataFrame(rows, columns=cols)
 
 
 def severity_curves(df, perturbs, title, path, clean_val=None):

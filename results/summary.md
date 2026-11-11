@@ -5,7 +5,7 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 ## Clean baseline
 
-3 runs, AUC@10 = 0.969 (std 0.003), registration 1.000.
+5 runs, AUC@10 = 0.970 (std 0.003), registration 1.000.
 
 
 ## E2a  Analytic corruptions
@@ -14,6 +14,9 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 | perturb | severity | n | auc@10 | reg_frac |
 |---|---|---|---|---|
+| contrast | 1 | 1 | 0.927 | 1.000 |
+| contrast | 3 | 1 | 0.579 | 0.780 |
+| contrast | 5 | 1 | 0.000 | 0.000 |
 | gaussian_blur | 1 | 1 | 0.918 | 1.000 |
 | gaussian_blur | 3 | 1 | 0.159 | 0.420 |
 | gaussian_blur | 5 | 1 | 0.000 | 0.000 |
@@ -32,6 +35,48 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | shot_noise | 1 | 1 | 0.475 | 0.720 |
 | shot_noise | 3 | 1 | 0.035 | 0.200 |
 | shot_noise | 5 | 1 | 0.000 | 0.040 |
+| underexpose | 1 | 1 | 0.971 | 1.000 |
+| underexpose | 3 | 1 | 0.567 | 0.820 |
+| underexpose | 5 | 1 | 0.198 | 0.460 |
+
+
+## E1s  Synthetic weather incl. desert
+
+![](figures/e1_synth_weather.png)
+
+| perturb | severity | n | auc@10 | reg_frac |
+|---|---|---|---|---|
+| fog | 1 | 1 | 0.970 | 1.000 |
+| fog | 3 | 1 | 0.566 | 0.780 |
+| fog | 5 | 1 | 0.333 | 0.600 |
+| harsh_sun | 1 | 1 | 0.972 | 1.000 |
+| harsh_sun | 3 | 1 | 0.474 | 0.740 |
+| harsh_sun | 5 | 1 | 0.335 | 0.640 |
+| heat_shimmer | 1 | 1 | 0.969 | 1.000 |
+| heat_shimmer | 3 | 1 | 0.969 | 1.000 |
+| heat_shimmer | 5 | 1 | 0.955 | 1.000 |
+| night | 1 | 1 | 0.940 | 1.000 |
+| night | 3 | 1 | 0.530 | 0.760 |
+| night | 5 | 1 | 0.000 | 0.040 |
+| rain | 1 | 1 | 0.967 | 1.000 |
+| rain | 3 | 1 | 0.554 | 0.780 |
+| rain | 5 | 1 | 0.328 | 0.600 |
+| sandstorm | 1 | 1 | 0.955 | 1.000 |
+| sandstorm | 3 | 1 | 0.558 | 0.780 |
+| sandstorm | 5 | 1 | 0.330 | 0.600 |
+| snow | 1 | 1 | 0.570 | 0.780 |
+| snow | 3 | 1 | 0.241 | 0.520 |
+| snow | 5 | 1 | 0.000 | 0.040 |
+
+
+## E4  Crowds
+
+![](figures/e4_crowds.png)
+
+| mitigation | severity | n | auc@10 | reg_frac |
+|---|---|---|---|---|
+| mask | 1 | 1 | 0.968 | 1.000 |
+| none | 1 | 1 | 0.969 | 1.000 |
 
 
 ## E1  Real weather (Boreas)
@@ -41,14 +86,42 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | stratum | n | auc@10 | reg_frac |
 |---|---|---|---|
 | sunny | 19 | 0.771 [0.57, 0.93] | 0.789 [0.58, 0.95] |
+| overcast | 12 | 0.570 [0.32, 0.82] | 0.588 [0.34, 0.84] |
+| snow_ground | 11 | 0.877 [0.70, 0.98] | 0.909 [0.73, 1.00] |
+| snowfall | 3 | 0.652 [0.00, 0.98] | 0.667 [0.00, 1.00] |
+| rain | 8 | 0.982 [0.98, 0.99] | 1.000 [1.00, 1.00] |
+| night | 4 | 0.021 [0.00, 0.06] | 0.530 [0.27, 0.83] |
 
 
 Per sequence:
 
 | stratum | seq | n | auc@10 | reg_frac |
 |---|---|---|---|---|
+| night | boreas-2021-09-14-20-00 | 4 | 0.021 [0.00, 0.06] | 0.530 [0.27, 0.83] |
+| overcast | boreas-2020-11-26-13-58 | 4 | 0.726 [0.24, 0.97] | 0.762 [0.29, 1.00] |
+| overcast | boreas-2021-01-19-15-08 | 4 | 0.737 [0.25, 0.98] | 0.750 [0.25, 1.00] |
+| overcast | boreas-2021-11-16-14-10 | 4 | 0.247 [0.00, 0.74] | 0.250 [0.00, 0.75] |
+| rain | boreas-2021-04-29-15-55 | 4 | 0.982 [0.98, 0.99] | 1.000 [1.00, 1.00] |
+| rain | boreas-2021-07-20-17-33 | 4 | 0.983 [0.98, 0.98] | 1.000 [1.00, 1.00] |
+| snow_ground | boreas-2020-12-01-13-26 | 4 | 0.956 [0.92, 0.98] | 1.000 [1.00, 1.00] |
+| snow_ground | boreas-2021-01-15-12-17 | 3 | 0.975 [0.95, 0.99] | 1.000 [1.00, 1.00] |
+| snow_ground | boreas-2021-02-02-14-07 | 4 | 0.724 [0.24, 0.98] | 0.750 [0.25, 1.00] |
+| snowfall | boreas-2021-01-26-11-22 | 3 | 0.652 [0.00, 0.98] | 0.667 [0.00, 1.00] |
 | sunny | boreas-2020-12-18-13-44 | 3 | 0.983 [0.98, 0.98] | 1.000 [1.00, 1.00] |
 | sunny | boreas-2021-04-08-12-44 | 4 | 0.736 [0.25, 0.99] | 0.750 [0.25, 1.00] |
 | sunny | boreas-2021-06-03-16-00 | 4 | 0.734 [0.24, 0.98] | 0.750 [0.25, 1.00] |
 | sunny | boreas-2021-08-05-13-34 | 4 | 0.490 [0.00, 0.98] | 0.500 [0.00, 1.00] |
 | sunny | boreas-2021-11-23-14-27 | 4 | 0.966 [0.94, 0.98] | 1.000 [1.00, 1.00] |
+
+
+## E7  Cross-season localisation
+
+![](figures/e7_xseason.png)
+
+| stratum | n | query_reg | cross_auc@10 |
+|---|---|---|---|
+| sunny | 3 | 1.000 [1.00, 1.00] | 0.929 [0.92, 0.94] |
+| overcast | 3 | 1.000 [1.00, 1.00] | 0.942 [0.93, 0.96] |
+| snow_ground | 2 | 1.000 [1.00, 1.00] | 0.937 [0.93, 0.94] |
+| rain | 2 | 1.000 [1.00, 1.00] | 0.934 [0.93, 0.94] |
+| night | 1 | 0.000 | 0.000 |
