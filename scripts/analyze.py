@@ -45,7 +45,9 @@ def load(raw: Path, pattern: str) -> pd.DataFrame:
     if not fs:
         return pd.DataFrame()
     df = pd.concat([pd.read_csv(f) for f in fs], ignore_index=True)
-    return df
+    # a run can be logged twice if two resumable queues overlapped: keep the first
+    key = [k for k in ("exp", "scene", "cond", "seq", "query_seq", "anchor", "perturb", "severity", "seed") if k in df.columns]
+    return df.drop_duplicates(subset=key, keep="first").reset_index(drop=True)
 
 
 def agg(df, keys, metrics=(METRIC, "reg_frac")):
