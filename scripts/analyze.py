@@ -114,11 +114,13 @@ def main():
     ctrl = load(raw, "e*__*.csv")
     clean_auc = None
     if not ctrl.empty:
-        clean = ctrl[ctrl.perturb == "clean"]
+        clean = ctrl[(ctrl.perturb == "clean") & (ctrl.features == "sift") & (ctrl.mapper == "incremental")]
         if len(clean):
             clean_auc = clean[METRIC].mean()
-            md.append(f"\n## Clean baseline\n\n{len(clean)} runs, AUC@10 = {clean_auc:.3f} (std {clean[METRIC].std():.3f}), "
+            md.append(f"\n## Clean baseline (SIFT + incremental)\n\n{len(clean)} runs, AUC@10 = {clean_auc:.3f} (std {clean[METRIC].std():.3f}), "
                       f"registration {clean.reg_frac.mean():.3f}.\n")
+            for sc, g in clean.groupby("scene"):
+                md.append(f"* {sc}: {len(g)} runs, AUC@10 {g[METRIC].mean():.3f} (min {g[METRIC].min():.3f})\n")
         for exp, title in [("e2_analytic", "E2a  Analytic corruptions"),
                            ("e2_generative", "E2b  Generative corruptions"),
                            ("e1_synth_weather", "E1s  Synthetic weather incl. desert")]:

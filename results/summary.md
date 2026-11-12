@@ -3,9 +3,13 @@
 Metric: pose AUC@10° over all input image pairs (unregistered = failure) and registration rate. Brackets: 95% bootstrap CI.
 
 
-## Clean baseline
+## Clean baseline (SIFT + incremental)
 
-48 runs, AUC@10 = 0.886 (std 0.208), registration 0.997.
+42 runs, AUC@10 = 0.959 (std 0.047), registration 0.997.
+
+* gerrard-hall: 21 runs, AUC@10 0.956 (min 0.670)
+
+* south-building: 21 runs, AUC@10 0.963 (min 0.905)
 
 
 ## E2a  Analytic corruptions
