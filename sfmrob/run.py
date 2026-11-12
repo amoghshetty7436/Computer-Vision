@@ -105,7 +105,7 @@ def _img_rng(name: str, c: dict, seed: int):
 
 
 def make_condition_images(clean_dir: Path, names: list[str], c: dict, seed: int, out_dir: Path,
-                          depths: dict | None) -> Path | None:
+                          depths: dict | None, resume: bool = False) -> Path | None:
     """Write the perturbed image set. Returns a mask dir if a masking mitigation applies."""
     out_dir.mkdir(parents=True, exist_ok=True)
     mask_dir = None
@@ -119,6 +119,8 @@ def make_condition_images(clean_dir: Path, names: list[str], c: dict, seed: int,
         mask_dir = out_dir.parent / (out_dir.name + "_masks")
         mask_dir.mkdir(exist_ok=True)
     for n in names:
+        if resume and (out_dir / n).exists() and (mask_dir is None or (mask_dir / f"{n}.png").exists()):
+            continue  # generated earlier (slow generative conditions resume per image)
         src = Image.open(clean_dir / n)
         exif = src.info.get("exif", b"")
         img = np.array(src.convert("RGB"))
@@ -150,7 +152,9 @@ def make_condition_images(clean_dir: Path, names: list[str], c: dict, seed: int,
             if person_mask is not None:
                 m[cv2.dilate(person_mask.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0] = 0
             cv2.imwrite(str(mask_dir / f"{n}.png"), m)
-        Image.fromarray(res).save(out_dir / n, quality=95, exif=exif)
+        tmp = out_dir / f".{n}.tmp.jpg"
+        Image.fromarray(res).save(tmp, quality=95, exif=exif)
+        os.replace(tmp, out_dir / n)
     return mask_dir
 
 
@@ -238,8 +242,7 @@ def main(argv=None):
                 if a.phase == "cpu":
                     print(f"  skip {cid} seed={seed}: GPU-generated images not ready", flush=True)
                     continue
-                shutil.rmtree(cache, ignore_errors=True)
-                mask_dir = make_condition_images(clean_dir, names, c, seed, img_dir, depths)
+                mask_dir = make_condition_images(clean_dir, names, c, seed, img_dir, depths, resume=True)
                 (cache / ".done").write_text("ok")
             elif c["mitigation"] == "mask":
                 mask_dir = cache / "images_masks"
