@@ -137,11 +137,14 @@ Every synthetic condition was run with 3 seeds on 2 scenes (n = 6); Boreas has 3
 | motion blur | 0.60 | 0.29 | 0.03 | 0.00 |
 | night | 0.80 | 0.68 | 0.35 | 0.09 |
 | crowds | 0.77 | 0.66 | 0.30 | 0.02 |
+| LaMa inpainting (s4) | 0.97 | 0.95 | 0.84 | 0.43 |
 
 (clean: 0.92)
 
 * **Bad photos poison good ones.** With 10% of photos motion-blurred, registration falls to 0.83, which is more than the
   10% we blurred, and accuracy falls by a third.
+* LaMa-edited photos, by contrast, do no harm until about half the set is edited. Edits that keep the
+  photo's real texture are tolerated, while edits that destroy texture everywhere (blur) poison the whole set.
 * *Conjecture:* in incremental SfM, a blurred image registered early with a poor pose triangulates bad points. Later
   good images then register against those points. Filtering photos by quality before SfM is worth more than making
   each step robust.
