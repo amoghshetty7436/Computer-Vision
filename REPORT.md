@@ -1,6 +1,6 @@
 # Where does Structure-from-Motion break? Results and conjectures
 
-*Draft. Numbers are from `results/summary.md` (auto-generated) and will be updated as the remaining GAN/LaMa runs finish.*
+*Numbers are from `results/summary.md` (auto-generated). Still pending, on GPU: SD-Turbo img2img noise, SD ×4 super-resolution, and ALIKED + LightGlue.*
 
 **Setup in one paragraph.** We run COLMAP (Schönberger & Frahm, CVPR 2016) through COLMAP 4 / pycolmap. The pipeline is
 SIFT with 8192 features, exhaustive matching and incremental mapping. We corrupt the input photos in controlled ways
@@ -83,9 +83,22 @@ Every synthetic condition was run with 3 seeds on 2 scenes (n = 6); Boreas has 3
 * Motion blur is the most damaging single corruption. It is anisotropic, so it shifts keypoints along the blur
   direction differently in each view.
 
-**Generative:** blackout control (holes filled with grey): 0.97 / 0.48 / 0.22. *LaMa inpainting and Real-ESRGAN
-regeneration with the same masks are still running.* Comparing them with blackout separates "information removed"
-from "plausible but wrong information added".
+**Generative (AUC@10 at s1 / s3 / s5, n = 6 each):**
+
+| corruption | s1 | s3 | s5 |
+|---|---|---|---|
+| blackout control (holes filled grey) | 0.97 | 0.48 | 0.22 |
+| LaMa inpainting (same holes, filled plausibly) | 0.97 | 0.56 | 0.26 |
+| Real-ESRGAN regeneration (down ×1.5 / ×3 / ×6, GAN re-synthesises the detail) | **0.35** | 0.21 | 0.02 |
+
+* **Inpainting is *not* worse than deleting the region.** LaMa fills slightly beat grey holes. SIFT finds few
+  keypoints in the smooth, low-frequency fills, so the invented content is mostly ignored, not mismatched.
+* **GAN regeneration is the most harmful generative edit.** With only ×1.5 downsampling, ESRGAN regeneration drops
+  AUC to 0.35. The analytic equivalent (pixelate s1) keeps 0.95. The GAN replaces *every* fine texture with its own
+  hallucination, so keypoints lose repeatability across views.
+* *Conjecture:* how much a generative edit harms SfM depends on how much **high-frequency** content it invents, not on
+  how much of the image it changes. Diffusion img2img (SD-Turbo, pending on GPU) should fall between the two,
+  depending on strength.
 
 ## E3 Super-resolution before SfM (TA ask #3)
 
@@ -94,7 +107,7 @@ from "plausible but wrong information added".
 | low-res input as is | 0.02 | 0.00 |
 | bicubic | 0.31 | 0.03 |
 | bicubic + unsharp | 0.32 | 0.05 |
-| Real-ESRGAN (1 run so far) | 0.17 | running |
+| Real-ESRGAN | 0.11 | 0.00 |
 
 * Classical upscaling helps a lot over the raw low-res input (0.02 → 0.31). The extra pixels give SIFT more octaves to
   work with.
@@ -105,17 +118,17 @@ from "plausible but wrong information added".
 
 ## E4 Tourist crowds (TA ask #4)
 
-| people per image | no mitigation | mask people | LaMa remove (1 run) |
+| people per image | no mitigation | mask people | LaMa remove |
 |---|---|---|---|
 | 2 | 0.94 | 0.97 | 0.97 |
-| 10 | 0.30 (reg 0.94) | 0.40 | 0.61 |
-| 40 | **0.04 (reg 0.89)** | 0.32 | 0.53 |
+| 10 | 0.30 (reg 0.94) | 0.40 | 0.38 |
+| 40 | **0.04 (reg 0.89)** | 0.32 | 0.32 |
 
 * **Crowds cause silent failure.** Almost every image still registers, but the poses are wrong. *Conjecture:* people are richly
   textured, so they win the feature budget. The COCO pool of cut-outs is finite, so the same person can appear in
   several views and give consistent-looking but wrong matches.
-* Masking helps but throws away the occluded background. LaMa removal does better in the single run so far, and more
-  runs are pending.
+* Masking and LaMa removal help about equally (0.04 → 0.32), so the cheap fix (a person mask) is enough. Neither
+  recovers the background the people hid. At 40 people per image that is a large part of the facade.
 
 ## E5 How many bad photos does it take? (extra)
 
