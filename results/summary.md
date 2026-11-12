@@ -5,7 +5,7 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 ## Clean baseline
 
-41 runs, AUC@10 = 0.932 (std 0.137), registration 0.997.
+48 runs, AUC@10 = 0.886 (std 0.208), registration 0.997.
 
 
 ## E2a  Analytic corruptions
@@ -142,12 +142,12 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 | condition         |   sift+global |   sift+incremental |
 |:------------------|--------------:|-------------------:|
-| clean_s0          |         0.4   |              0.965 |
-| crowd_s4          |         0.006 |              0.099 |
-| fog_s5            |         0.313 |              0.236 |
-| gaussian_noise_s4 |         0.215 |              0.126 |
-| motion_blur_s3    |         0.058 |              0     |
-| night_s3          |         0.374 |              0.421 |
+| clean_s0          |         0.377 |              0.963 |
+| crowd_s4          |         0.01  |              0.109 |
+| fog_s5            |         0.414 |              0.201 |
+| gaussian_noise_s4 |         0.273 |              0.089 |
+| motion_blur_s3    |         0.041 |              0     |
+| night_s3          |         0.394 |              0.367 |
 
 
 ## E1  Real weather (Boreas)
