@@ -53,6 +53,12 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | blackout | 1 | 6 | 0.969 [0.96, 0.97] | 1.000 [1.00, 1.00] |
 | blackout | 3 | 6 | 0.482 [0.42, 0.54] | 0.711 [0.66, 0.76] |
 | blackout | 5 | 6 | 0.222 [0.12, 0.35] | 0.468 [0.35, 0.60] |
+| inpaint_lama | 1 | 2 | 0.974 [0.97, 0.98] | 1.000 [1.00, 1.00] |
+| inpaint_lama | 3 | 2 | 0.414 [0.26, 0.57] | 0.653 [0.53, 0.78] |
+| inpaint_lama | 5 | 1 | 0.469 | 0.720 |
+| regen_esrgan | 1 | 2 | 0.356 [0.11, 0.60] | 0.677 [0.38, 0.98] |
+| regen_esrgan | 3 | 2 | 0.210 [0.06, 0.36] | 0.460 [0.30, 0.62] |
+| regen_esrgan | 5 | 2 | 0.027 [0.01, 0.05] | 0.185 [0.12, 0.25] |
 
 
 ## E1s  Synthetic weather incl. desert
@@ -96,6 +102,7 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | 4 | unsharp_bicubic | 6 | 0.320 [0.18, 0.46] | 0.555 [0.42, 0.69] |
 | 8 | bicubic | 6 | 0.026 [0.01, 0.04] | 0.145 [0.07, 0.21] |
 | 8 | lowres | 6 | 0.000 [0.00, 0.00] | 0.037 [0.01, 0.06] |
+| 8 | realesrgan | 1 | 0.000 | 0.040 |
 | 8 | unsharp_bicubic | 6 | 0.051 [0.05, 0.05] | 0.245 [0.24, 0.25] |
 
 
@@ -128,6 +135,11 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | crowd | 0.500 | 6 | 0.298 [0.16, 0.42] | 0.859 [0.73, 0.97] |
 | crowd | 0.750 | 6 | 0.126 [0.07, 0.18] | 0.934 [0.89, 0.97] |
 | crowd | 1.000 | 6 | 0.023 [0.01, 0.04] | 0.966 [0.91, 1.00] |
+| inpaint_lama | 0.100 | 1 | 0.966 | 1.000 |
+| inpaint_lama | 0.250 | 1 | 0.868 | 1.000 |
+| inpaint_lama | 0.500 | 1 | 0.939 | 1.000 |
+| inpaint_lama | 0.750 | 1 | 0.571 | 0.780 |
+| inpaint_lama | 1.000 | 1 | 0.570 | 0.780 |
 | motion_blur | 0.100 | 6 | 0.599 [0.43, 0.73] | 0.829 [0.75, 0.90] |
 | motion_blur | 0.250 | 6 | 0.285 [0.13, 0.44] | 0.508 [0.34, 0.67] |
 | motion_blur | 0.500 | 6 | 0.028 [0.01, 0.06] | 0.162 [0.10, 0.23] |
