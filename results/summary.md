@@ -5,7 +5,7 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 ## Clean baseline
 
-40 runs, AUC@10 = 0.907 (std 0.202), registration 0.972.
+41 runs, AUC@10 = 0.932 (std 0.137), registration 0.997.
 
 
 ## E2a  Analytic corruptions
@@ -86,10 +86,10 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 | severity | method | n | auc@10 | reg_frac |
 |---|---|---|---|---|
-| 4 | bicubic | 6 | 0.238 [0.10, 0.38] | 0.472 [0.33, 0.61] |
+| 4 | bicubic | 6 | 0.313 [0.18, 0.45] | 0.548 [0.41, 0.68] |
 | 4 | lowres | 6 | 0.023 [0.01, 0.04] | 0.125 [0.04, 0.21] |
 | 4 | realesrgan | 1 | 0.174 | 0.440 |
-| 4 | unsharp_bicubic | 6 | 0.233 [0.08, 0.39] | 0.442 [0.26, 0.62] |
+| 4 | unsharp_bicubic | 6 | 0.320 [0.18, 0.46] | 0.555 [0.42, 0.69] |
 | 8 | bicubic | 6 | 0.026 [0.01, 0.04] | 0.145 [0.07, 0.21] |
 | 8 | lowres | 6 | 0.000 [0.00, 0.00] | 0.037 [0.01, 0.06] |
 | 8 | unsharp_bicubic | 6 | 0.051 [0.05, 0.05] | 0.245 [0.24, 0.25] |
@@ -142,12 +142,12 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 | condition         |   sift+global |   sift+incremental |
 |:------------------|--------------:|-------------------:|
-| clean_s0          |         0.4   |              0.962 |
+| clean_s0          |         0.4   |              0.965 |
 | crowd_s4          |         0.006 |              0.099 |
-| fog_s5            |         0.313 |              0.19  |
-| gaussian_noise_s4 |         0.215 |              0.108 |
+| fog_s5            |         0.313 |              0.236 |
+| gaussian_noise_s4 |         0.215 |              0.126 |
 | motion_blur_s3    |         0.058 |              0     |
-| night_s3          |         0.374 |              0.369 |
+| night_s3          |         0.374 |              0.421 |
 
 
 ## E1  Real weather (Boreas)
