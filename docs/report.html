@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where SfM Breaks</title>
+<style>
+:root{
+  --bg:#fbfaf7; --card:#ffffff; --ink:#1d1f23; --muted:#5d6470; --line:#e4e1da;
+  --accent:#2f5d8a; --good:#2e7d4f; --mid:#b7791f; --bad:#b3362f; --barbg:#eeebe4; --code:#f3f1ec;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181c; --card:#1e2126; --ink:#e7e8ea; --muted:#a0a7b2; --line:#30343b;
+    --accent:#7fb0e0; --good:#5cc08a; --mid:#e0a64a; --bad:#ec6f66; --barbg:#2a2e35; --code:#262a30;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181c; --card:#1e2126; --ink:#e7e8ea; --muted:#a0a7b2; --line:#30343b;
+  --accent:#7fb0e0; --good:#5cc08a; --mid:#e0a64a; --bad:#ec6f66; --barbg:#2a2e35; --code:#262a30;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:920px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.4rem;margin:48px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin:24px 0 6px}
+p,li{color:var(--ink)}
+.sub{color:var(--muted);margin:0 0 24px}
+.tag{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi b{display:block;font-size:1.6rem}
+.kpi span{color:var(--muted);font-size:.9rem}
+.why{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.why{grid-template-columns:1fr}}
+.why div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.why h4{margin:0 0 4px;font-size:.95rem}
+.fail h4{color:var(--bad)} .work h4{color:var(--good)}
+.take{border-left:4px solid var(--accent);background:var(--card);padding:10px 14px;border-radius:0 8px 8px 0;margin:16px 0}
+.conj{border-left:4px solid var(--mid);background:var(--card);padding:10px 14px;border-radius:0 8px 8px 0;margin:16px 0}
+.tbl{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;background:var(--card)}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;white-space:nowrap}
+th{background:var(--barbg)}
+td.n{font-variant-numeric:tabular-nums}
+.bars{margin:10px 0}
+.bar{display:grid;grid-template-columns:170px 1fr 48px;align-items:center;gap:8px;margin:5px 0;font-size:.9rem}
+@media (max-width:520px){.bar{grid-template-columns:110px 1fr 42px}}
+.track{background:var(--barbg);height:14px;border-radius:7px;overflow:hidden}
+.fill{height:100%;border-radius:7px}
+.val{font-variant-numeric:tabular-nums;text-align:right}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.88em}
+.pending{color:var(--muted);font-style:italic}
+nav ol{columns:2;margin:0;padding-left:20px}
+@media (max-width:520px){nav ol{columns:1}}
+a{color:var(--accent)}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+
+<span class="tag">CS 5672 · Fall 2026 · Course project</span>
+<h1>Where does Structure from Motion break?</h1>
+<p class="sub">COLMAP under weather, desert conditions, rising noise, generative AI edits, super-resolution and tourist crowds, plus three extra experiments.</p>
+
+<div class="grid">
+  <div class="kpi"><b>7</b><span>experiments, all run end to end</span></div>
+  <div class="kpi"><b>0.96</b><span>clean baseline pose accuracy (AUC@10)</span></div>
+  <div class="kpi"><b>3 seeds × 2 scenes</b><span>for every synthetic condition</span></div>
+  <div class="kpi"><b>~2.8 GPU-h</b><span>on NERSC Perlmutter (cap was 8 h)</span></div>
+</div>
+
+<nav class="card">
+<b>Contents</b>
+<ol>
+<li><a href="#problem">The problem in plain words</a></li>
+<li><a href="#glossary">Glossary: every term and model used</a></li>
+<li><a href="#setup">Setup and how we score</a></li>
+<li><a href="#e1">E1 Weather and desert</a></li>
+<li><a href="#e2">E2 Escalating noise: analytic vs generative</a></li>
+<li><a href="#e3">E3 Super-resolution before SfM</a></li>
+<li><a href="#e4">E4 Tourist crowds</a></li>
+<li><a href="#e5">E5 How many bad photos does it take?</a></li>
+<li><a href="#e6">E6 Features, matcher or mapper?</a></li>
+<li><a href="#e7">E7 Cross-season re-localisation</a></li>
+<li><a href="#big">The big picture</a></li>
+<li><a href="#lim">Limitations</a></li>
+</ol>
+</nav>
+
+<h2 id="problem">The problem in plain words</h2>
+<p><b>Turning photos into 3D.</b> Take a few dozen ordinary photos of a building from different spots. A computer can work out where each photo was taken from and build a 3D model of the building. This is called <b>Structure from Motion (SfM)</b>. It's used for Google Earth-style 3D cities, virtual tours, preserving historic sites, film visual effects, AR apps and robot or car navigation.</p>
+<p><b>The standard tool.</b> The most widely used SfM program is <b>COLMAP</b>, from the paper our project is based on (Schönberger &amp; Frahm, CVPR 2016). The paper shows it working very well on clean tourist photos taken in good daylight.</p>
+<p><b>What nobody had checked.</b> Real photos are often far from clean. They're taken at night or in rain, fog, snow or desert sandstorms. They're crowded with tourists. More and more, they've also been passed through AI tools that "enhance", upscale or edit them. The paper doesn't test any of this.</p>
+<p><b>Our question.</b> <i>Under which real-world conditions does COLMAP stop working, how badly does it fail, and why?</i> For each condition we change the photos in a controlled way, run the full 3D reconstruction, and measure how far the recovered camera positions are from the true ones. For every experiment we also say in advance why it might fail and why it might still work, then check which happened.</p>
+<p><b>The project brief.</b> Our TA asked for four experiments: (1) weather and desert scenes, (2) gradually stronger image noise, including AI-generated changes, (3) using super-resolution (AI upscaling) before SfM, and (4) photos crowded with tourists. We added three more: (5) how many bad photos it takes to spoil a reconstruction, (6) which part of the pipeline is to blame and whether modern AI-based methods fix it, and (7) whether a map made on a sunny day still works in other seasons and at night.</p>
+
+<h2 id="glossary">Glossary: every term and model used</h2>
+<h3>Core ideas</h3>
+<ul>
+<li><b>Pose:</b> where a camera was and which way it pointed when the photo was taken.</li>
+<li><b>Keypoint (feature):</b> a small, distinctive spot in an image, such as a window corner or a brick edge, that can be found again in another photo of the same place.</li>
+<li><b>Descriptor:</b> a list of numbers that summarises what the patch around a keypoint looks like. Two keypoints "match" if their descriptors are similar.</li>
+<li><b>Matching:</b> pairing keypoints between two photos that show the same physical point.</li>
+<li><b>RANSAC:</b> a method for removing wrong matches. It repeatedly guesses the camera geometry from a few matches and keeps the guess that most other matches agree with. Matches that agree are called <b>inliers</b>.</li>
+<li><b>Triangulation:</b> working out a 3D point from where it appears in two or more photos.</li>
+<li><b>Registration:</b> successfully adding a photo to the 3D model, meaning its pose was found. The <b>registered fraction</b> is the share of photos added.</li>
+<li><b>Bundle adjustment:</b> a final optimisation that nudges all cameras and 3D points together until they agree as well as possible.</li>
+<li><b>Reprojection error:</b> how far, in pixels, a 3D point lands from where it was actually seen when projected back into a photo. Low means the model is internally consistent, but not necessarily correct.</li>
+<li><b>Incremental SfM:</b> builds the model one photo at a time, starting from a good pair (COLMAP's default).</li>
+<li><b>Global SfM:</b> solves all camera positions at once instead of one by one. Faster, but less forgiving.</li>
+<li><b>Ground truth:</b> the true camera poses we compare against.</li>
+<li><b>Symmetry / doppelganger problem:</b> when different parts of a building look identical (for example, two matching facades), the system can confuse them and put a camera on the wrong side.</li>
+<li><b>Silent failure:</b> the model looks complete (almost every photo registered) but the poses are wrong.</li>
+</ul>
+<h3>How we score</h3>
+<ul>
+<li><b>AUC@10 (pose accuracy):</b> our main score, from 0 to 1. For every pair of photos we measure the angle error of their relative pose. The score rewards pairs with small errors, and anything worse than 10° gets no credit. Photos that fail to register count as failures. 1.0 is perfect and 0 means nothing is right. Clean photos score 0.96.</li>
+<li><b>Severity (s1 to s5):</b> how strong a corruption is, from mild (1) to extreme (5).</li>
+<li><b>Seed:</b> a random-number setting. We repeat each experiment with 3 seeds on 2 scenes and average the 6 results, so they don't depend on luck.</li>
+<li><b>95% confidence interval [a, b]:</b> the range the true average very likely falls in, given the variation between runs.</li>
+<li><b>PSNR:</b> a standard measure of how similar two images are pixel by pixel. Higher means more similar; around 20 dB looks close to the eye.</li>
+</ul>
+<h3>Software and models</h3>
+<ul>
+<li><b>COLMAP / pycolmap:</b> the SfM software from the paper, and its Python interface. We used version 4.</li>
+<li><b>SIFT:</b> the classic, hand-designed keypoint method (2004) that COLMAP uses by default. It finds blob-like spots at many zoom levels ("octaves").</li>
+<li><b>Ratio test:</b> SIFT's rule for rejecting a match when the best candidate is barely better than the second best, which means the match is ambiguous.</li>
+<li><b>GLOMAP:</b> a recent global SfM program from the COLMAP authors.</li>
+<li><b>ALIKED:</b> a modern keypoint and descriptor method learned by a neural network.</li>
+<li><b>LightGlue:</b> a neural network that matches keypoints between two images by looking at all of them together. Very strong on hard images.</li>
+<li><b>NN + ratio ("ALIKED+NN"):</b> ALIKED keypoints matched the classic way (nearest descriptor plus ratio test), with no learned matcher. Used to tell whether problems come from the learned features or from the learned matcher.</li>
+<li><b>LaMa:</b> a neural network for <i>inpainting</i>: it fills a missing region of an image with plausible content.</li>
+<li><b>Real-ESRGAN:</b> a GAN (generative adversarial network) for super-resolution, which makes a small image bigger by inventing realistic detail.</li>
+<li><b>Stable Diffusion / SD-Turbo:</b> an AI image generator. In <b>img2img</b> mode it redraws an existing photo; the <b>strength</b> (0 to 1) sets how much it changes. SD-Turbo is a fast version.</li>
+<li><b>SD ×4 upscaler:</b> the Stable Diffusion model for 4× super-resolution.</li>
+<li><b>Bicubic / unsharp mask:</b> standard non-AI ways to enlarge an image and to sharpen it.</li>
+<li><b>Super-resolution (SR):</b> enlarging a low-resolution image while trying to restore detail.</li>
+<li><b>COCO:</b> a public image dataset with outlines of people, which we used to paste realistic crowds into photos.</li>
+<li><b>Koschmieder model:</b> the standard physics formula for fog: distant things fade towards the sky colour.</li>
+<li><b>JPEG artefacts:</b> blocky 8×8-pixel patterns left by strong image compression.</li>
+</ul>
+<h3>Datasets and compute</h3>
+<ul>
+<li><b>Gerrard Hall, South Building:</b> two building photo sets (at UNC Chapel Hill) published with COLMAP.</li>
+<li><b>Boreas:</b> a self-driving dataset from Toronto: the same route driven over a year in sun, rain, snow, overcast and night, with very accurate GPS positions as ground truth.</li>
+<li><b>NERSC Perlmutter:</b> a US government supercomputer with A100 GPUs. We used it for the AI models.</li>
+<li><b>GPU-hour:</b> one graphics card used for one hour.</li>
+</ul>
+
+<h2 id="setup">Setup and how we score</h2>
+<p><b>What SfM does.</b> Structure from Motion takes an unordered set of photos of a scene and recovers two things: where each camera was (its <i>pose</i>) and a 3D point cloud of the scene. COLMAP (Schönberger &amp; Frahm, CVPR 2016) does it in four stages:</p>
+<ol>
+<li><b>Features:</b> find distinctive keypoints in every photo (SIFT, 8192 per image) and describe the patch around each one.</li>
+<li><b>Matching:</b> compare descriptors between every pair of photos (exhaustive matching) and keep matches that agree with a two-view geometric model (RANSAC).</li>
+<li><b>Mapping:</b> start from a good pair, triangulate 3D points, then add ("register") one camera at a time (<i>incremental</i> SfM). We also test <i>global</i> SfM (GLOMAP), which solves all camera rotations and positions at once.</li>
+<li><b>Bundle adjustment:</b> jointly refine all cameras and points.</li>
+</ol>
+<p><b>What the paper doesn't test.</b> COLMAP was evaluated on clean internet photo collections. It doesn't cover bad weather, night, deserts, photos changed by generative AI, super-resolved input or heavy crowds. That's the gap these experiments fill.</p>
+
+<h3>Score: pose AUC@10°</h3>
+<p>For every pair of images we compare the reconstructed relative pose against ground truth and take the larger of the rotation and translation-direction errors. AUC@10 is the area under the curve of "fraction of pairs with error below t" for t from 0° to 10°, normalised to 0–1. <b>An image that fails to register counts as a failure for all of its pairs</b>, so a pipeline can't look good by quietly dropping hard images. This is the protocol of the Image Matching Challenge.</p>
+<ul>
+<li><b>1.0</b> means every relative pose is essentially perfect; <b>0</b> means nothing is within 10°.</li>
+<li>We also report the <b>registered fraction</b>: the share of photos that made it into the model. A high registered fraction with a low AUC is a <i>silent failure</i>, where the model looks complete but is wrong.</li>
+</ul>
+
+<h3>Data</h3>
+<ul>
+<li><b>Gerrard Hall</b> (50 images) and <b>South Building</b> (40 images), both from COLMAP's own datasets at 1024 px. Ground truth is COLMAP's full-resolution reconstruction from all images.</li>
+<li><b>Boreas</b>: the same Toronto driving route recorded on 15 different days across 6 weather/light conditions, with GNSS/INS ground truth, evaluated at 4 fixed places. This gives us <i>real</i> weather to compare with the synthetic versions.</li>
+</ul>
+
+<h3>Compute</h3>
+<p>CPU runs (most of SfM) ran in a cloud container. GPU-heavy parts (Stable Diffusion img2img, the SD ×4 upscaler, ALIKED+LightGlue) ran as parallel Slurm array jobs on NERSC Perlmutter A100s, about 2.8 GPU-hours in total. Every number comes from <code>results/summary.md</code>, which <code>scripts/analyze.py</code> generates from the raw CSV logs. Brackets are 95% bootstrap confidence intervals.</p>
+
+<!-- E1 -->
+<h2 id="e1">E1 Weather and desert</h2>
+<span class="tag">TA ask #1</span>
+<p><b>Question:</b> How does SfM degrade across weather conditions, and do desert conditions such as sandstorm, heat shimmer and harsh sun pose problems of their own? Does synthetic weather behave like real weather?</p>
+<p><b>What we did:</b> (a) We split Boreas real driving data into 6 weather strata and reconstructed each. (b) We applied 7 physically motivated synthetic effects at 5 severities to the two COLMAP scenes: Koschmieder fog, rain streaks, falling snow, night (exposure drop plus sensor noise), sandstorm (colour-shifted haze plus particles), heat shimmer (smooth random warping) and harsh sun (overexposure, clipped highlights, glare). (c) We applied the same synthetic effects to sunny Boreas runs so they could be compared directly with real weather.</p>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>Fog and haze remove contrast, so gradients get too weak for SIFT. Snowflakes and rain streaks are blob-like and create fake keypoints. Night adds heavy noise and motion blur. Heat shimmer moves pixels differently in each view, which breaks the geometry. Clipped highlights have no gradients at all.</div>
+<div class="work"><h4>Why it might work</h4>SIFT normalises for brightness and contrast and works across scales, so mild degradations should leave many good keypoints. RANSAC throws out random false matches from rain or snow, and only a few hundred good matches per pair are needed.</div>
+</div>
+
+<h3>Real weather (Boreas)</h3>
+<div class="bars" id="b-e1real"></div>
+<div class="tbl"><table>
+<tr><th>condition</th><th>AUC@10 [95% CI]</th><th>registered</th></tr>
+<tr><td>rain</td><td class="n">0.87 [0.75, 0.98]</td><td class="n">0.96</td></tr>
+<tr><td>snow on the ground</td><td class="n">0.88 [0.77, 0.96]</td><td class="n">0.91</td></tr>
+<tr><td>sunny</td><td class="n">0.74 [0.62, 0.84]</td><td class="n">0.76</td></tr>
+<tr><td>snowfall</td><td class="n">0.65 [0.33, 0.98]</td><td class="n">0.67</td></tr>
+<tr><td>overcast</td><td class="n">0.54 [0.38, 0.70]</td><td class="n">0.56</td></tr>
+<tr><td><b>night</b></td><td class="n"><b>0.02 [0.01, 0.04]</b></td><td class="n">0.51</td></tr>
+</table></div>
+<ul>
+<li><b>Night is the only real condition that breaks SfM.</b> Half of the night frames still register, but their poses are wrong.</li>
+<li><b>Daytime rain and snow don't hurt.</b> This agrees with Sattler et al. (2018).</li>
+<li><b>Where you are matters more than the weather.</b> One fast, straight stretch of road with little parallax fails often in any weather. That's why "sunny" scores below rain and snow.</li>
+</ul>
+
+<h3>Synthetic weather on the COLMAP scenes</h3>
+<div class="tbl"><table>
+<tr><th>condition</th><th>severity 1</th><th>severity 3</th><th>severity 5</th></tr>
+<tr><td>heat shimmer (desert)</td><td class="n">0.97</td><td class="n">0.97</td><td class="n">0.77</td></tr>
+<tr><td>sandstorm (desert)</td><td class="n">0.97</td><td class="n">0.76</td><td class="n">0.20</td></tr>
+<tr><td>harsh sun (desert)</td><td class="n">0.98</td><td class="n">0.34</td><td class="n">0.16</td></tr>
+<tr><td>fog</td><td class="n">0.97</td><td class="n">0.72</td><td class="n">0.21</td></tr>
+<tr><td>rain</td><td class="n">0.90</td><td class="n">0.44</td><td class="n">0.16</td></tr>
+<tr><td>night</td><td class="n">0.85</td><td class="n">0.37</td><td class="n">0.005</td></tr>
+<tr><td>snow (falling)</td><td class="n">0.55</td><td class="n">0.22</td><td class="n">0.00</td></tr>
+</table></div>
+<div class="bars" id="b-e1syn"></div>
+<ul>
+<li><b>Desert:</b> heat shimmer is almost harmless until it's extreme. It does bend pixels differently in each view, but by less than SIFT's own localisation noise. Harsh sun is the worst desert effect, because saturated regions have no gradients and so no keypoints.</li>
+<li><b>Falling snow is the worst weather.</b> The flakes create thousands of blob-like Difference-of-Gaussian extrema that compete with real keypoints for the fixed 8192-feature budget.</li>
+</ul>
+
+<h3>Synthetic vs real</h3>
+<ul>
+<li>Full-strength synthetic fog (0.17) and snow (0.04) are <b>harsher</b> than any real Boreas snow or weather condition (0.65–0.88).</li>
+<li>Synthetic night (0.33) is <b>milder</b> than real night (0.02).</li>
+</ul>
+<div class="take"><b>Takeaway.</b> Corruption benchmarks rank conditions the wrong way round. Real night is the hard case, and simulating it with darkening plus noise underestimates it. Real snow and rain are easier than their simulations.</div>
+<div class="conj"><b>Conjecture.</b> For driving data, scene geometry and camera motion matter more than weather, except at night. There, photon noise, headlight glare and motion blur all hit the descriptors at once.</div>
+
+<!-- E2 -->
+<h2 id="e2">E2 Escalating noise: analytic vs generative</h2>
+<span class="tag">TA ask #2</span>
+<p><b>Question:</b> As corruption gets stronger, where does SfM break, and do generative AI edits fail differently from classic image noise?</p>
+<p><b>What we did:</b> We applied 11 analytic corruptions at 5 severities (Gaussian, shot and impulse noise, Gaussian, motion and defocus blur, JPEG, pixelation, contrast, underexposure and more). We then applied 4 generative edits at the same 5 levels:</p>
+<ul>
+<li><b>LaMa inpainting:</b> cut random holes in the image and let LaMa fill them with plausible content. A <b>blackout control</b> fills the same holes with flat grey, so we can tell "content was removed" apart from "content was invented".</li>
+<li><b>Real-ESRGAN regeneration:</b> downsample by ×1.5, ×3 or ×6 and let the GAN re-synthesise the missing detail.</li>
+<li><b>SD-Turbo img2img</b> (Stable Diffusion) at strength 0.1 to 0.6. At 0.1 the image looks almost unchanged.</li>
+</ul>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>Noise creates false keypoints and blur removes real ones. Generative models invent content that differs in every view, so features can be confidently matched to things that aren't there.</div>
+<div class="work"><h4>Why it might work</h4>Generative edits at low strength keep the image's layout and look visually faithful, so you'd expect them to be safer than noise. SIFT's scale space can reach coarser octaves where noise averages out.</div>
+</div>
+
+<h3>Analytic corruptions</h3>
+<div class="tbl"><table>
+<tr><th>corruption</th><th>s1</th><th>s3</th><th>s5</th></tr>
+<tr><td>contrast</td><td class="n">0.95</td><td class="n">0.35</td><td class="n">0.00</td></tr>
+<tr><td>pixelate</td><td class="n">0.95</td><td class="n">0.29</td><td class="n">0.04</td></tr>
+<tr><td>Gaussian blur</td><td class="n">0.93</td><td class="n">0.13</td><td class="n">0.00</td></tr>
+<tr><td>underexpose</td><td class="n">0.91</td><td class="n">0.68</td><td class="n">0.10</td></tr>
+<tr><td>Gaussian noise</td><td class="n">0.83</td><td class="n">0.28</td><td class="n">0.00</td></tr>
+<tr><td>motion blur</td><td class="n">0.60</td><td class="n">0.003</td><td class="n">0.00</td></tr>
+<tr><td>JPEG</td><td class="n">0.57</td><td class="n">0.19</td><td class="n">0.00</td></tr>
+<tr><td>shot (Poisson) noise</td><td class="n">0.31</td><td class="n">0.07</td><td class="n">0.00</td></tr>
+</table></div>
+<ul>
+<li><b>Two kinds of failure.</b> <i>Removal</i> (blur, pixelation, low contrast) mostly lowers registration: images simply drop out. <i>Additive</i> damage (noise, JPEG blocking) keeps registration high but ruins accuracy. Mild JPEG registers 99% of images yet scores only 0.57, because the 8×8 block corners create repeatable but wrong keypoints.</li>
+<li><b>Motion blur is the most damaging single corruption.</b> It smears in one direction, which shifts keypoints differently in each view.</li>
+</ul>
+
+<h3>Generative edits</h3>
+<div class="bars" id="b-e2gen"></div>
+<div class="tbl"><table>
+<tr><th>edit</th><th>s1</th><th>s3</th><th>s5</th></tr>
+<tr><td>blackout control (grey holes)</td><td class="n">0.97</td><td class="n">0.48</td><td class="n">0.22</td></tr>
+<tr><td>LaMa inpainting (same holes, plausible fill)</td><td class="n">0.97</td><td class="n">0.56</td><td class="n">0.26</td></tr>
+<tr><td>Real-ESRGAN regeneration</td><td class="n"><b>0.35</b></td><td class="n">0.21</td><td class="n">0.02</td></tr>
+<tr><td>SD-Turbo img2img</td><td class="n"><b>0.00</b> (reg 0.05)</td><td class="n">0.00</td><td class="n">0.00</td></tr>
+</table></div>
+<ul>
+<li><b>Inpainting isn't worse than deleting.</b> LaMa slightly beats grey holes. Its fills are smooth, so SIFT finds few keypoints there and mostly ignores the invented content instead of mismatching it.</li>
+<li><b>GAN regeneration is harmful.</b> With only ×1.5 downsampling, ESRGAN drops AUC to 0.35. The equivalent analytic degradation (pixelate s1) keeps 0.95. The GAN replaces every fine texture with its own guess, so keypoints don't repeat across views.</li>
+<li><b>Diffusion img2img destroys SfM even at the lowest strength.</b> At strength 0.1 the output looks almost identical (PSNR about 20.5 dB) and keeps 70% of the SIFT keypoints. But geometrically consistent matches between two views drop by about 95%: from 344 to 17 and from 157 to 10 RANSAC inliers on two Gerrard Hall pairs. Only 2 of 50 images register. The model redraws brick, leaves and text independently in every view, so keypoints survive but their descriptors stop agreeing.</li>
+</ul>
+<div class="take"><b>Takeaway.</b> How a generative edit <i>looks</i> says nothing about whether SfM survives it. A nearly invisible diffusion edit is fatal, while a large but smooth inpainting is harmless.</div>
+<div class="conj"><b>Conjecture.</b> The damage depends on how much <b>high-frequency</b> detail the model invents, not on how much of the image it changes. LaMa invents smooth content (harmless), ESRGAN invents fine texture (harmful), and diffusion re-renders all fine texture (fatal). Photo collections that pass through AI "enhancement" may look fine to people and still be unusable for 3D.</div>
+
+<!-- E3 -->
+<h2 id="e3">E3 Super-resolution before SfM</h2>
+<span class="tag">TA ask #3</span>
+<p><b>Question:</b> If the input photos are low resolution, does running a super-resolution model before SfM help?</p>
+<p><b>What we did:</b> We downsampled every image ×4 or ×8 and then compared: using the low-res images as they are, bicubic upscaling, bicubic plus unsharp mask, Real-ESRGAN (GAN) and the Stable Diffusion ×4 upscaler (diffusion, run tiled on Perlmutter).</p>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>Learned SR invents detail independently in each image. Invented texture gives keypoints that don't repeat in other views, which is worse than having no keypoints there.</div>
+<div class="work"><h4>Why it might work</h4>More pixels give SIFT more octaves and sharper edges, and SR models are trained on real textures similar to building facades.</div>
+</div>
+<div class="bars" id="b-e3"></div>
+<div class="tbl"><table>
+<tr><th>method</th><th>×4 down then up</th><th>×8 down then up</th></tr>
+<tr><td>low-res input as is</td><td class="n">0.02</td><td class="n">0.00</td></tr>
+<tr><td>bicubic</td><td class="n"><b>0.31</b></td><td class="n">0.03</td></tr>
+<tr><td>bicubic + unsharp</td><td class="n"><b>0.32</b></td><td class="n">0.05</td></tr>
+<tr><td>Real-ESRGAN</td><td class="n">0.11</td><td class="n">0.00</td></tr>
+<tr><td>SD ×4 upscaler (diffusion; seed 0)</td><td class="n">0.10</td><td class="n">0.00</td></tr>
+</table></div>
+<ul>
+<li>Plain upscaling helps a lot compared with the raw low-res input (0.02 → 0.31).</li>
+<li>Real-ESRGAN is <b>worse</b> than bicubic, and diffusion SR is just as bad (0.10 vs 0.11).</li>
+</ul>
+<div class="take"><b>Takeaway.</b> If you have to upscale photos for SfM, use bicubic. "AI enhance" actively hurts.</div>
+<div class="conj"><b>Conjecture.</b> SR helps SfM only if it's consistent across views. Single-image generative SR invents a different answer for each photo. A multi-view SR model, or SR applied after matching, could avoid this.</div>
+
+<!-- E4 -->
+<h2 id="e4">E4 Tourist crowds</h2>
+<span class="tag">TA ask #4</span>
+<p><b>Question:</b> Landmark photos are full of tourists. How many people does it take to break SfM, and do the usual fixes work?</p>
+<p><b>What we did:</b> We pasted 2, 10 or 40 real people (COCO person cut-outs with their segmentation masks) into every image, at random positions and scales. We then compared three options: no mitigation, masking the people so that no features are extracted on them, and erasing them with LaMa inpainting before SfM.</p>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>People are richly textured (clothes, faces) and take up the keypoint budget. People move between photos, so their matches give wrong geometry. The same COCO cut-out can show up in several views and create matches that look consistent but are wrong.</div>
+<div class="work"><h4>Why it might work</h4>The background stays still and RANSAC rejects matches on moving people. A person mask is cheap, and COLMAP already supports feature masks.</div>
+</div>
+<div class="bars" id="b-e4"></div>
+<div class="tbl"><table>
+<tr><th>people per image</th><th>no mitigation</th><th>mask people</th><th>LaMa remove</th></tr>
+<tr><td>2</td><td class="n">0.94</td><td class="n">0.97</td><td class="n">0.97</td></tr>
+<tr><td>10</td><td class="n">0.30 (reg 0.94)</td><td class="n">0.40</td><td class="n">0.38</td></tr>
+<tr><td>40</td><td class="n"><b>0.04 (reg 0.89)</b></td><td class="n">0.32</td><td class="n">0.32</td></tr>
+</table></div>
+<ul>
+<li><b>Crowds cause silent failure.</b> Almost every image still registers (89%), but the poses are wrong.</li>
+<li>Masking and LaMa removal help equally (0.04 → 0.32), so the cheap fix is enough. Neither can recover the facade the people were hiding, and at 40 people that's a large part of it.</li>
+</ul>
+<div class="take"><b>Takeaway.</b> Mask people before SfM. Inpainting them away brings no extra benefit for pose accuracy.</div>
+
+<!-- E5 -->
+<h2 id="e5">E5 How many bad photos does it take?</h2>
+<span class="tag">Extra</span>
+<p><b>Question:</b> Real collections are mixed: most photos are fine and some are bad. Do a few bad photos only cost their own registration, or do they hurt the good photos too?</p>
+<p><b>What we did:</b> We corrupted a random 10%, 25%, 50% or 100% of the photos with one corruption and left the rest clean.</p>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>Incremental SfM builds on its earlier decisions. One badly posed camera triangulates bad 3D points, and later good cameras register against them.</div>
+<div class="work"><h4>Why it might work</h4>Bad images should simply fail to register while the good ones carry the model. Bundle adjustment and outlier filtering should contain the damage.</div>
+</div>
+<div class="tbl"><table>
+<tr><th>share corrupted</th><th>10%</th><th>25%</th><th>50%</th><th>100%</th></tr>
+<tr><td>motion blur</td><td class="n">0.60</td><td class="n">0.29</td><td class="n">0.03</td><td class="n">0.00</td></tr>
+<tr><td>night</td><td class="n">0.80</td><td class="n">0.68</td><td class="n">0.35</td><td class="n">0.09</td></tr>
+<tr><td>crowds</td><td class="n">0.77</td><td class="n">0.66</td><td class="n">0.30</td><td class="n">0.02</td></tr>
+<tr><td>LaMa inpainting (s4)</td><td class="n">0.97</td><td class="n">0.95</td><td class="n">0.84</td><td class="n">0.43</td></tr>
+</table></div>
+<small>Clean reference for this experiment: 0.92.</small>
+<div class="bars" id="b-e5"></div>
+<ul>
+<li><b>Bad photos poison good ones.</b> With 10% of photos motion-blurred, registration falls to 0.83, which is more than the 10% we blurred, and accuracy falls by a third.</li>
+<li>LaMa-edited photos do no harm until about half the set is edited.</li>
+</ul>
+<div class="conj"><b>Conjecture.</b> In incremental SfM, a blurred image registered early with a poor pose triangulates bad points, and later good images register against them. Filtering photos by quality before SfM is worth more than making each stage more robust.</div>
+
+<!-- E6 -->
+<h2 id="e6">E6 Is the failure in the features, the matcher or the mapper?</h2>
+<span class="tag">Extra</span>
+<p><b>Question:</b> When SfM fails, which stage is to blame? Would modern learned features fix it?</p>
+<p><b>What we did:</b> We swapped each stage independently on the hardest conditions from E1–E4:</p>
+<ul>
+<li><b>Features:</b> SIFT vs ALIKED (learned keypoints and descriptors).</li>
+<li><b>Matcher:</b> LightGlue (a learned matcher) vs classic mutual nearest neighbour + ratio test on the same ALIKED features ("NN"). This separates the learned features from the learned matcher.</li>
+<li><b>Mapper:</b> incremental COLMAP vs global GLOMAP.</li>
+</ul>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>Learned matchers are trained to find correspondences even in hard images, so they may also confidently match two windows that only look identical. Global SfM solves all rotations at once and has no chance to reject a bad view gradually.</div>
+<div class="work"><h4>Why it might work</h4>ALIKED and LightGlue were trained with heavy photometric augmentation and lead current matching benchmarks, so they should survive noise and blur that defeat SIFT.</div>
+</div>
+<div class="tbl"><table>
+<tr><th>condition</th><th>SIFT incr.</th><th>ALIKED+LightGlue incr.</th><th>ALIKED+NN incr.</th><th>SIFT global</th><th>ALIKED+LG global</th><th>ALIKED+NN global</th></tr>
+<tr><td>clean</td><td class="n"><b>0.96</b></td><td class="n">0.35</td><td class="n">0.56</td><td class="n">0.38</td><td class="n">0.17</td><td class="n">0.24</td></tr>
+<tr><td>Gaussian noise s4</td><td class="n">0.09</td><td class="n">0.40</td><td class="n"><b>0.46</b></td><td class="n">0.27</td><td class="n">0.15</td><td class="n">0.12</td></tr>
+<tr><td>motion blur s3</td><td class="n">0.00</td><td class="n"><b>0.28</b></td><td class="n">0.03</td><td class="n">0.04</td><td class="n">0.04</td><td class="n">0.02</td></tr>
+<tr><td>night s3</td><td class="n">0.37</td><td class="n">0.41</td><td class="n"><b>0.49</b></td><td class="n">0.39</td><td class="n">0.18</td><td class="n">0.21</td></tr>
+<tr><td>fog s5</td><td class="n">0.20</td><td class="n">0.30</td><td class="n">0.29</td><td class="n"><b>0.41</b></td><td class="n">0.13</td><td class="n">0.16</td></tr>
+<tr><td>crowds s4</td><td class="n">0.11</td><td class="n"><b>0.34</b></td><td class="n">0.33</td><td class="n">0.01</td><td class="n">0.09</td><td class="n">0.07</td></tr>
+<tr><td>LaMa inpaint s3</td><td class="n pending">running</td><td class="n">0.34</td><td class="n"><b>0.49</b></td><td class="n pending">running</td><td class="n">0.19</td><td class="n">0.20</td></tr>
+<tr><td>Real-ESRGAN SR ×8</td><td class="n pending">running</td><td class="n"><b>0.41</b></td><td class="n">0.23</td><td class="n pending">running</td><td class="n">0.09</td><td class="n">0.06</td></tr>
+</table></div>
+<small>The four "running" cells are the last SIFT runs, finishing tonight. REPORT.md on GitHub will have them once they're in.</small>
+<ul>
+<li><b>Learned features trade clean accuracy for robustness.</b> On clean photos SIFT is far better (0.96 vs 0.35–0.56). Under noise, crowds, blur and generative SR, ALIKED is 3–4× better, and LightGlue is the only pipeline that survives motion blur.</li>
+<li><b>Why ALIKED does badly on clean photos: symmetry, not noise.</b> Every image registers and the reprojection error is low (0.6–0.7 px), but the model is wrong in a structured way. On South Building every image has a median rotation error of 89° or 91°. That fits views of one facade being placed onto a similar-looking neighbouring facade, a 90° turn around the building (our interpretation, not checked view by view). Gerrard Hall splits into two groups, at 78° and 103°. The evaluation itself is fine: the same per-image check gives 0.4° on SIFT runs.</li>
+<li><b>The learned matcher is the main culprit.</b> Replacing LightGlue with classic NN + ratio matching on the same features recovers part of the accuracy (0.35 → 0.56), and on a 14-image South Building subset it reaches 0.96. SIFT's ratio test rejects ambiguous matches; LightGlue's confidence on repeated structure accepts them.</li>
+<li><b>Global SfM is the most sensitive to symmetry.</b> GLOMAP is worst on clean photos with every feature type. On clean Gerrard Hall it places 12 consecutive photos rotated by about 135°. It wins only in heavy fog with SIFT (0.41 vs 0.20), where incremental SfM can't chain registrations.</li>
+</ul>
+<div class="conj"><b>Conjecture.</b> Robustness to degradation and robustness to ambiguity pull in opposite directions. A matcher that finds correspondences in a blurry or noisy image will also find them between two identical-looking windows. Learned matchers need symmetry-aware verification (for example, the Doppelgangers work of Cai et al., 2023) before they can replace SIFT for landmark photo collections.</div>
+
+<!-- E7 -->
+<h2 id="e7">E7 Cross-season re-localisation</h2>
+<span class="tag">Extra</span>
+<p><b>Question:</b> If you build a map on a sunny day, can you still localise new photos taken in another season or condition? This is the downstream task for AR and self-driving.</p>
+<p><b>What we did:</b> We built a SIFT map from a sunny Boreas run, then registered 20 query frames from each other condition at the same place into it (240 queries per condition).</p>
+<div class="why">
+<div class="fail"><h4>Why it might fail</h4>Snow covers ground texture, leaves change, and at night the lighting is completely different, so descriptors from a daytime map may not match at all.</div>
+<div class="work"><h4>Why it might work</h4>Buildings, signs and poles don't change with the seasons, and the viewpoint is the same, which is SIFT's easiest case.</div>
+</div>
+<div class="bars" id="b-e7"></div>
+<div class="tbl"><table>
+<tr><th>query condition</th><th>registered into the sunny map</th><th>AUC@10</th></tr>
+<tr><td>sunny (another day)</td><td class="n">1.00</td><td class="n">0.90</td></tr>
+<tr><td>overcast</td><td class="n">0.97</td><td class="n">0.90</td></tr>
+<tr><td>snow on the ground</td><td class="n">0.97</td><td class="n">0.88</td></tr>
+<tr><td>rain</td><td class="n">0.88</td><td class="n">0.83</td></tr>
+<tr><td>snowfall</td><td class="n">0.87</td><td class="n">0.76</td></tr>
+<tr><td><b>night</b></td><td class="n"><b>0.00</b></td><td class="n"><b>0.00</b></td></tr>
+</table></div>
+<div class="take"><b>Takeaway.</b> Seasonal change, even snow cover, is fine for SIFT at the same viewpoint. Night is a hard wall: not one of 240 night queries localised into the daytime map.</div>
+
+<h2 id="big">The big picture</h2>
+<ol>
+<li><b>Night is the real enemy.</b> It's the only real condition that breaks reconstruction (0.02) and localisation (0%), and synthetic night badly underestimates it.</li>
+<li><b>Generative AI is a new failure mode.</b> Edits that invent fine texture (GAN, diffusion, AI super-resolution) break SfM even when the photos look perfect. Smooth edits (inpainting) are harmless.</li>
+<li><b>Many failures are silent.</b> Crowds, JPEG and learned matchers on symmetric buildings register almost every image while getting the poses wrong. Checking registration alone isn't enough.</li>
+<li><b>A few bad photos poison the rest.</b> Filtering by image quality before SfM is cheap and effective.</li>
+<li><b>No pipeline wins everywhere.</b> SIFT plus incremental mapping is best on clean data, learned features win under degradation, and learned matching is confused by symmetry.</li>
+</ol>
+
+<h2 id="lim">Limitations</h2>
+<ul>
+<li>The two COLMAP scenes are subsampled (50 and 40 images at 1024 px), which makes them harder than the full sets. The relative comparisons are what matter.</li>
+<li>Boreas strata were labelled by eye, and the overcast and sunny results partly reflect how hard each place is.</li>
+<li>Synthetic corruptions are models of reality. E1 shows they can rank real conditions the wrong way.</li>
+<li>The symmetry explanation for ALIKED is our interpretation from rotation-error patterns. We didn't check it view by view.</li>
+<li>The SD ×4 upscaler result uses one seed because of GPU budget.</li>
+</ul>
+<p><small>Code, raw CSV logs and the full write-up: <a href="https://github.com/amoghshetty7436/Computer-Vision">github.com/amoghshetty7436/Computer-Vision</a> (see REPORT.md).</small></p>
+
+</main>
+<script>
+function col(v){return v>=0.75?'var(--good)':v>=0.35?'var(--mid)':'var(--bad)';}
+function bars(id,rows){
+  var el=document.getElementById(id); if(!el) return;
+  el.innerHTML=rows.map(function(r){
+    return '<div class="bar"><span>'+r[0]+'</span><div class="track"><div class="fill" style="width:'+Math.max(r[1]*100,1)+'%;background:'+col(r[1])+'"></div></div><span class="val">'+r[1].toFixed(2)+'</span></div>';
+  }).join('');
+}
+bars('b-e1real',[['snow on the ground',.88],['rain',.87],['sunny',.74],['snowfall',.65],['overcast',.54],['night',.02]]);
+bars('b-e1syn',[['heat shimmer s5',.77],['fog s5',.21],['sandstorm s5',.20],['harsh sun s5',.16],['rain s5',.16],['night s5',.005],['snow s5',0]]);
+bars('b-e2gen',[['blackout s1',.97],['LaMa s1',.97],['Real-ESRGAN s1',.35],['SD-Turbo s1',0]]);
+bars('b-e3',[['bicubic + unsharp',.32],['bicubic',.31],['Real-ESRGAN',.11],['SD ×4',.10],['low-res as is',.02]]);
+bars('b-e4',[['40 people, mask',.32],['40 people, LaMa',.32],['40 people, none',.04]]);
+bars('b-e5',[['LaMa 10%',.97],['night 10%',.80],['crowds 10%',.77],['motion blur 10%',.60]]);
+bars('b-e7',[['sunny',.90],['overcast',.90],['snow on ground',.88],['rain',.83],['snowfall',.76],['night',0]]);
+</script>
+</body>
+</html>
