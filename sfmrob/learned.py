@@ -37,8 +37,19 @@ def _models(max_kpts=4096):
 
 
 @torch.no_grad()
+def _mnn_ratio(da, db, ratio=0.9):
+    """Mutual nearest neighbours + Lowe ratio test on L2-normalised descriptors (the classic
+    SIFT-style matcher, used to separate ALIKED features from LightGlue's learned matching)."""
+    d = torch.cdist(da, db)
+    v01, i01 = d.topk(2, dim=1, largest=False)
+    i10 = d.argmin(dim=0)
+    ok = (v01[:, 0] < ratio * v01[:, 1]) & (i10[i01[:, 0]] == torch.arange(len(da), device=da.device))
+    idx = torch.nonzero(ok)[:, 0]
+    return torch.stack([idx, i01[idx, 0]], 1)
+
+
 def aliked_lightglue_into_db(db_path, image_dir, names, work_dir, matcher="exhaustive", overlap=10,
-                             max_kpts=4096):
+                             max_kpts=4096, matching="lightglue"):
     ext, lg = _models(max_kpts)
     db = pycolmap.Database.open(str(db_path))
     name2id = {im.name: im.image_id for im in db.read_all_images()}
@@ -49,8 +60,8 @@ def aliked_lightglue_into_db(db_path, image_dir, names, work_dir, matcher="exhau
         x = torch.from_numpy(np.asarray(Image.open(Path(image_dir) / n).convert("RGB"))).permute(2, 0, 1)
         x = x.float().div(255)[None].to(_dev())
         f = ext(x)[0]
-        kp = f.keypoints.float()
-        feats[n] = (kp, f.descriptors.float(), torch.tensor([[x.shape[-1], x.shape[-2]]], device=_dev()))
+        kp = f.keypoints.detach().float()
+        feats[n] = (kp, f.descriptors.detach().float(), torch.tensor([[x.shape[-1], x.shape[-2]]], device=_dev()))
         # COLMAP keypoint convention: pixel centre at +0.5
         db.write_keypoints(name2id[n], (kp.cpu().numpy() + 0.5).astype(np.float32))
     if matcher == "exhaustive":
@@ -59,9 +70,12 @@ def aliked_lightglue_into_db(db_path, image_dir, names, work_dir, matcher="exhau
         pairs = [(names[i], names[j]) for i in range(len(names)) for j in range(i + 1, min(i + 1 + overlap, len(names)))]
     for a, b in pairs:
         ka, da, sa = feats[a]; kb, dbb, sb = feats[b]
-        out = lg({"image0": {"keypoints": ka[None], "descriptors": da[None], "image_size": sa},
-                  "image1": {"keypoints": kb[None], "descriptors": dbb[None], "image_size": sb}})
-        m = out["matches"][0].cpu().numpy().astype(np.uint32)
+        if matching == "lightglue":
+            out = lg({"image0": {"keypoints": ka[None], "descriptors": da[None], "image_size": sa},
+                      "image1": {"keypoints": kb[None], "descriptors": dbb[None], "image_size": sb}})
+            m = out["matches"][0].cpu().numpy().astype(np.uint32)
+        else:
+            m = _mnn_ratio(da.detach(), dbb.detach()).detach().cpu().numpy().astype(np.uint32)
         if len(m):
             db.write_matches(name2id[a], name2id[b], m)
     db.close()

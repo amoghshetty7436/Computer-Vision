@@ -85,7 +85,7 @@ def conditions(exp: str, full: bool) -> list[dict]:
         hard = [("clean", 0), ("motion_blur", 3), ("gaussian_noise", 4), ("night", 3), ("fog", 5),
                 ("inpaint_lama", 3), ("crowd", 4), ("sr_realesrgan", 8)]
         out = []
-        for feat in ["sift", "aliked_lg"]:
+        for feat in ["sift", "aliked_lg", "aliked_nn"]:
             for mapper in ["incremental", "global"]:
                 for p, s in hard:
                     out.append(dict(perturb=p, severity=s, frac=1.0, mitigation="none",
@@ -172,7 +172,7 @@ def needs_gpu_gen(c):
 
 
 def needs_gpu_sfm(c):
-    return c["features"] == "aliked_lg"
+    return c["features"] in ("aliked_lg", "aliked_nn")
 
 
 def main(argv=None):

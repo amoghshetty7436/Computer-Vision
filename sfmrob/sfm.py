@@ -16,7 +16,7 @@ import pycolmap
 
 @dataclass
 class SfMConfig:
-    features: str = "sift"          # sift | aliked
+    features: str = "sift"          # sift | aliked_lg (LightGlue) | aliked_nn (mutual NN + ratio)
     matcher: str = "exhaustive"     # exhaustive | sequential
     mapper: str = "incremental"     # incremental (COLMAP) | global (GLOMAP inside COLMAP 4)
     max_num_features: int = 8192
@@ -53,7 +53,7 @@ def _extraction_options(cfg: SfMConfig) -> pycolmap.FeatureExtractionOptions:
     if cfg.features == "sift":
         o.type = pycolmap.FeatureExtractorType.SIFT
         o.sift.max_num_features = cfg.max_num_features
-    elif cfg.features in ("aliked", "aliked_lg"):
+    elif cfg.features in ("aliked", "aliked_lg", "aliked_nn"):
         # COLMAP only creates cameras/images here; keypoints are replaced by learned.py
         o.type = pycolmap.FeatureExtractorType.SIFT
         o.sift.max_num_features = 16
@@ -102,9 +102,10 @@ def run_sfm(image_dir: str | Path, work_dir: str | Path, cfg: SfMConfig,
         t["extract_s"] = time.time() - t0
         t0 = time.time()
         dev = pycolmap.Device.cuda if cfg.use_gpu else pycolmap.Device.cpu
-        if cfg.features in ("aliked", "aliked_lg"):
+        if cfg.features in ("aliked", "aliked_lg", "aliked_nn"):
             from .learned import aliked_lightglue_into_db
-            aliked_lightglue_into_db(db, image_dir, names, work_dir, matcher=cfg.matcher, overlap=cfg.seq_overlap)
+            aliked_lightglue_into_db(db, image_dir, names, work_dir, matcher=cfg.matcher, overlap=cfg.seq_overlap,
+                                     matching="nn_ratio" if cfg.features == "aliked_nn" else "lightglue")
         elif cfg.matcher == "exhaustive":
             pycolmap.match_exhaustive(db, matching_options=_matching_options(cfg), device=dev)
         elif cfg.matcher == "sequential":
