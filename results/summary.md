@@ -59,6 +59,11 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | regen_esrgan | 1 | 6 | 0.354 [0.19, 0.52] | 0.695 [0.48, 0.89] |
 | regen_esrgan | 3 | 6 | 0.214 [0.11, 0.32] | 0.454 [0.32, 0.58] |
 | regen_esrgan | 5 | 6 | 0.022 [0.01, 0.03] | 0.185 [0.14, 0.23] |
+| sdturbo_img2img | 1 | 6 | 0.000 [0.00, 0.00] | 0.045 [0.04, 0.05] |
+| sdturbo_img2img | 2 | 6 | 0.000 [0.00, 0.00] | 0.015 [0.00, 0.03] |
+| sdturbo_img2img | 3 | 6 | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] |
+| sdturbo_img2img | 4 | 6 | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] |
+| sdturbo_img2img | 5 | 6 | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] |
 
 
 ## E1s  Synthetic weather incl. desert
@@ -99,10 +104,12 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | 4 | bicubic | 6 | 0.313 [0.18, 0.45] | 0.548 [0.41, 0.68] |
 | 4 | lowres | 6 | 0.023 [0.01, 0.04] | 0.125 [0.04, 0.21] |
 | 4 | realesrgan | 6 | 0.110 [0.06, 0.15] | 0.345 [0.28, 0.41] |
+| 4 | sd_x4 | 2 | 0.102 [0.06, 0.15] | 0.348 [0.28, 0.42] |
 | 4 | unsharp_bicubic | 6 | 0.320 [0.18, 0.46] | 0.555 [0.42, 0.69] |
 | 8 | bicubic | 6 | 0.026 [0.01, 0.04] | 0.145 [0.07, 0.21] |
 | 8 | lowres | 6 | 0.000 [0.00, 0.00] | 0.037 [0.01, 0.06] |
 | 8 | realesrgan | 6 | 0.000 [0.00, 0.00] | 0.020 [0.01, 0.03] |
+| 8 | sd_x4 | 2 | 0.000 [0.00, 0.00] | 0.000 [0.00, 0.00] |
 | 8 | unsharp_bicubic | 6 | 0.051 [0.05, 0.05] | 0.245 [0.24, 0.25] |
 
 
@@ -156,14 +163,16 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 
 ![](figures/e6_methods.png)
 
-| condition         |   sift+global |   sift+incremental |
-|:------------------|--------------:|-------------------:|
-| clean_s0          |         0.377 |              0.963 |
-| crowd_s4          |         0.01  |              0.109 |
-| fog_s5            |         0.414 |              0.201 |
-| gaussian_noise_s4 |         0.273 |              0.089 |
-| motion_blur_s3    |         0.041 |              0     |
-| night_s3          |         0.394 |              0.367 |
+| condition         |   aliked_lg+global |   aliked_lg+incremental |   aliked_nn+global |   aliked_nn+incremental |   sift+global |   sift+incremental |
+|:------------------|-------------------:|------------------------:|-------------------:|------------------------:|--------------:|-------------------:|
+| clean_s0          |              0.165 |                   0.352 |              0.238 |                   0.564 |         0.377 |              0.963 |
+| crowd_s4          |              0.086 |                   0.335 |              0.067 |                   0.328 |         0.01  |              0.109 |
+| fog_s5            |              0.128 |                   0.296 |              0.162 |                   0.291 |         0.414 |              0.201 |
+| gaussian_noise_s4 |              0.145 |                   0.399 |              0.116 |                   0.459 |         0.273 |              0.089 |
+| inpaint_lama_s3   |              0.189 |                   0.344 |              0.196 |                   0.493 |       nan     |            nan     |
+| motion_blur_s3    |              0.035 |                   0.278 |              0.02  |                   0.029 |         0.041 |              0     |
+| night_s3          |              0.181 |                   0.406 |              0.212 |                   0.486 |         0.394 |              0.367 |
+| sr_realesrgan_s8  |              0.086 |                   0.407 |              0.061 |                   0.227 |       nan     |            nan     |
 
 
 ## E1  Real weather (Boreas)

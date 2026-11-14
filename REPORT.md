@@ -1,6 +1,6 @@
 # Where does Structure-from-Motion break? Results and conjectures
 
-*Numbers are from `results/summary.md` (auto-generated). Still pending, on GPU: SD-Turbo img2img noise, SD ×4 super-resolution, and ALIKED + LightGlue.*
+*Numbers are from `results/summary.md` (auto-generated). CPU runs: cloud container; GPU runs (SD-Turbo, SD ×4, ALIKED): NERSC Perlmutter A100s, about 2.8 GPU-hours in total.*
 
 **Setup in one paragraph.** We run COLMAP (Schönberger & Frahm, CVPR 2016) through COLMAP 4 / pycolmap. The pipeline is
 SIFT with 8192 features, exhaustive matching and incremental mapping. We corrupt the input photos in controlled ways
@@ -90,15 +90,22 @@ Every synthetic condition was run with 3 seeds on 2 scenes (n = 6); Boreas has 3
 | blackout control (holes filled grey) | 0.97 | 0.48 | 0.22 |
 | LaMa inpainting (same holes, filled plausibly) | 0.97 | 0.56 | 0.26 |
 | Real-ESRGAN regeneration (down ×1.5 / ×3 / ×6, GAN re-synthesises the detail) | **0.35** | 0.21 | 0.02 |
+| SD-Turbo img2img (diffusion, strength 0.1 / 0.3 / 0.6) | **0.00** (reg 0.05) | 0.00 | 0.00 |
 
 * **Inpainting is *not* worse than deleting the region.** LaMa fills slightly beat grey holes. SIFT finds few
   keypoints in the smooth, low-frequency fills, so the invented content is mostly ignored, not mismatched.
 * **GAN regeneration is the most harmful generative edit.** With only ×1.5 downsampling, ESRGAN regeneration drops
   AUC to 0.35. The analytic equivalent (pixelate s1) keeps 0.95. The GAN replaces *every* fine texture with its own
   hallucination, so keypoints lose repeatability across views.
+* **Diffusion img2img destroys SfM even at the lowest strength.** At strength 0.1 the output is visually almost
+  identical: same layout and colours, PSNR about 20.5 dB, and 70% of the SIFT keypoints kept. But geometrically
+  consistent matches between two views drop by about 95% (344 → 17 and 157 → 10 RANSAC inliers on two Gerrard Hall
+  pairs). The model re-draws brick, leaves and text independently in every view, so keypoints survive but their
+  descriptors no longer agree across views. Only 2 of 50 images register.
 * *Conjecture:* how much a generative edit harms SfM depends on how much **high-frequency** content it invents, not on
-  how much of the image it changes. Diffusion img2img (SD-Turbo, pending on GPU) should fall between the two,
-  depending on strength.
+  how much of the image it changes or how it looks. LaMa invents smooth content (harmless), ESRGAN invents fine texture
+  (harmful), and diffusion re-renders *all* fine texture (fatal). Photo collections that pass through generative
+  "enhancement" may look fine to people but be unusable for 3D reconstruction.
 
 ## E3 Super-resolution before SfM (TA ask #3)
 
@@ -108,11 +115,13 @@ Every synthetic condition was run with 3 seeds on 2 scenes (n = 6); Boreas has 3
 | bicubic | 0.31 | 0.03 |
 | bicubic + unsharp | 0.32 | 0.05 |
 | Real-ESRGAN | 0.11 | 0.00 |
+| SD ×4 upscaler (diffusion; seed 0) | 0.10 | 0.00 |
 
 * Classical upscaling helps a lot over the raw low-res input (0.02 → 0.31). The extra pixels give SIFT more octaves to
   work with.
 * The GAN (Real-ESRGAN) is *worse* than bicubic: it hallucinates high-frequency texture independently in each view, so
   the new keypoints don't repeat across views.
+* Diffusion SR (SD ×4) is as bad as the GAN (0.10 vs 0.11): both are generative and per view.
 * *Conjecture:* SR helps SfM only if it is multi-view consistent. Single-image generative SR, the usual
   "enhancement" step, actively hurts.
 
@@ -149,21 +158,40 @@ Every synthetic condition was run with 3 seeds on 2 scenes (n = 6); Boreas has 3
   good images then register against those points. Filtering photos by quality before SfM is worth more than making
   each step robust.
 
-## E6 Is the failure in SIFT or in incremental SfM? (extra)
+## E6 Is the failure in the features, the matcher, or the mapper? (extra)
 
-| condition | SIFT + incremental | SIFT + global (GLOMAP) |
-|---|---|---|
-| clean | 0.96 | 0.38 |
-| fog s5 | 0.20 | 0.41 |
-| Gaussian noise s4 | 0.09 | 0.27 |
-| night s3 | 0.37 | 0.39 |
-| crowds s4 | 0.11 | 0.01 |
+AUC@10, mean of 3 seeds × 2 scenes. "NN" means ALIKED features with classic mutual-nearest-neighbour + ratio matching,
+which isolates the learned matcher (LightGlue) from the learned features.
 
-* GLOMAP fails on *clean* Gerrard Hall. It places 12 consecutive photos of one side of the building rotated by about
-  135°, a symmetric-facade ambiguity that global rotation averaging cannot resolve (`docs/notes_glomap_symmetry.md`).
-* Under fog and noise, though, global SfM degrades *less* than incremental. It uses all pairs at once instead of
-  chaining registrations, so one bad step can't cascade.
-* ALIKED + LightGlue (learned features): pending, runs on GPU.
+| condition | SIFT incr. | ALIKED+LightGlue incr. | ALIKED+NN incr. | SIFT global | ALIKED+LG global | ALIKED+NN global |
+|---|---|---|---|---|---|---|
+| clean | **0.96** | 0.35 | 0.56 | 0.38 | 0.17 | 0.24 |
+| Gaussian noise s4 | 0.09 | 0.40 | **0.46** | 0.27 | 0.15 | 0.12 |
+| motion blur s3 | 0.00 | **0.28** | 0.03 | 0.04 | 0.04 | 0.02 |
+| night s3 | 0.37 | 0.41 | **0.49** | 0.39 | 0.18 | 0.21 |
+| fog s5 | 0.20 | 0.30 | 0.29 | **0.41** | 0.13 | 0.16 |
+| crowds s4 | 0.11 | **0.34** | 0.33 | 0.01 | 0.09 | 0.07 |
+| LaMa inpaint s3 | SIFT_LAMA | 0.34 | **0.49** | SIFT_LAMA_G | 0.19 | 0.20 |
+| Real-ESRGAN SR ×8 | SIFT_SR | **0.41** | 0.23 | SIFT_SR_G | 0.09 | 0.06 |
+
+* **Learned features trade clean accuracy for robustness.** On clean photos SIFT is far better (0.96 vs 0.35 to 0.56).
+  Under noise, crowds, blur and generative SR, ALIKED is 3 to 4× better, and LightGlue is the only pipeline that
+  survives motion blur.
+* **Why ALIKED is poor on clean photos: symmetry, not noise.** Every image registers and the reprojection error is low
+  (0.6 to 0.7 px), but the reconstruction is wrong in a structured way. On South Building every image has a median
+  relative-rotation error of 89° or 91°. This is consistent with views of one facade being registered onto a
+  similar-looking neighbouring facade, a 90° turn around the building (our interpretation; not checked view by view). On Gerrard Hall the images split into two groups, at 78° and 103°.
+  The evaluation code is fine: the same per-image check gives 0.4° on SIFT runs (`scripts/diag_poses.py`, logs in
+  `results/raw/perlmutter_gpu/logs/`). Swapping LightGlue for classic NN + ratio matching on the same features recovers
+  part of it (0.35 → 0.56), and on a 14-image subset of South Building it gives 0.96. So the *learned matcher's*
+  confidence on repeated structure is the main culprit, while SIFT's ratio test rejects ambiguous matches.
+* **Global SfM (GLOMAP) is the most symmetry-sensitive.** It is worst on clean photos with every feature type: on clean
+  Gerrard Hall it places 12 consecutive photos rotated by about 135° (`docs/notes_glomap_symmetry.md`). It is
+  competitive only under fog with SIFT (0.41 vs 0.20), where incremental SfM fails to chain registrations.
+* *Conjecture:* robustness to degradation and robustness to ambiguity pull in opposite directions. A matcher that
+  finds correspondences in a blurred or noisy image will also find them between two identical-looking windows.
+  Doppelganger-aware verification (e.g. Cai et al. 2023) is needed before learned matchers can replace SIFT for
+  landmark photo collections.
 
 ## E7 Cross-season re-localisation (extra)
 

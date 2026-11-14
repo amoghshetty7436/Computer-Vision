@@ -41,7 +41,8 @@ def ci(x, n=2000, seed=0):
 
 
 def load(raw: Path, pattern: str) -> pd.DataFrame:
-    fs = sorted(raw.glob(pattern))
+    # local CPU runs in raw/, GPU runs from Perlmutter in raw/perlmutter_gpu/ (diag/ and logs/ excluded)
+    fs = sorted(raw.glob(pattern)) + sorted((raw / "perlmutter_gpu").glob(pattern))
     if not fs:
         return pd.DataFrame()
     df = pd.concat([pd.read_csv(f) for f in fs], ignore_index=True)

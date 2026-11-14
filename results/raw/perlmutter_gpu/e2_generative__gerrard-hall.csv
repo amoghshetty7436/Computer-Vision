@@ -1,0 +1,16 @@
+exp,scene,cond,seed,perturb,severity,frac,mitigation,features,mapper,n_input,n_reg,reg_frac,n_models,n_points3D,mean_track_len,mean_reproj_err,obs_per_image,extract_s,match_s,map_s,auc@5,auc@10,auc@20,med_rot_err,med_trans_err,ate_rel,ate_abs,error,wall_s
+e2_generative,gerrard-hall,sdturbo_img2img_s1_f1.0_none_sift-incremental,0,sdturbo_img2img,1,1.0,none,sift,incremental,50,2,0.04,1,40,2.0,0.5085441140485445,40.0,3.71,8.15,2.94,0.0,0.0,0.0,31.559327961800378,4.0755548592176565,,,,66.3
+e2_generative,gerrard-hall,sdturbo_img2img_s1_f1.0_none_sift-incremental,1,sdturbo_img2img,1,1.0,none,sift,incremental,50,2,0.04,1,45,2.0,0.508839293501999,45.0,3.46,7.79,0.22,0.0,0.0,0.0,25.55766907356321,13.34691143861419,,,,32.1
+e2_generative,gerrard-hall,sdturbo_img2img_s1_f1.0_none_sift-incremental,2,sdturbo_img2img,1,1.0,none,sift,incremental,50,2,0.04,1,31,2.0,0.562720885929545,31.0,3.45,7.94,0.29,0.00026122448979591835,0.0005387755102040818,0.0006775510204081632,2.729134380757863,3.4314516178981114,,,,31.3
+e2_generative,gerrard-hall,sdturbo_img2img_s2_f1.0_none_sift-incremental,0,sdturbo_img2img,2,1.0,none,sift,incremental,50,0,0.0,0,0,,,,3.67,8.34,2.9,0.0,0.0,0.0,,,,,,40.0
+e2_generative,gerrard-hall,sdturbo_img2img_s2_f1.0_none_sift-incremental,1,sdturbo_img2img,2,1.0,none,sift,incremental,50,0,0.0,0,0,,,,3.51,8.41,2.74,0.0,0.0,0.0,,,,,,40.4
+e2_generative,gerrard-hall,sdturbo_img2img_s2_f1.0_none_sift-incremental,2,sdturbo_img2img,2,1.0,none,sift,incremental,50,2,0.04,1,38,2.0,0.5051893357021843,38.0,3.55,21.53,0.2,0.0,0.0,5.714285714285715e-05,18.686479716936606,9.610055969112633,,,,50.1
+e2_generative,gerrard-hall,sdturbo_img2img_s3_f1.0_none_sift-incremental,0,sdturbo_img2img,3,1.0,none,sift,incremental,50,0,0.0,0,0,,,,3.71,10.34,0.1,0.0,0.0,0.0,,,,,,45.6
+e2_generative,gerrard-hall,sdturbo_img2img_s3_f1.0_none_sift-incremental,1,sdturbo_img2img,3,1.0,none,sift,incremental,50,0,0.0,0,0,,,,3.97,10.7,3.14,0.0,0.0,0.0,,,,,,48.9
+e2_generative,gerrard-hall,sdturbo_img2img_s3_f1.0_none_sift-incremental,2,sdturbo_img2img,3,1.0,none,sift,incremental,50,0,0.0,0,0,,,,3.75,10.51,3.08,0.0,0.0,0.0,,,,,,48.3
+e2_generative,gerrard-hall,sdturbo_img2img_s4_f1.0_none_sift-incremental,0,sdturbo_img2img,4,1.0,none,sift,incremental,50,0,0.0,0,0,,,,4.24,14.92,0.09,0.0,0.0,0.0,,,,,,54.8
+e2_generative,gerrard-hall,sdturbo_img2img_s4_f1.0_none_sift-incremental,1,sdturbo_img2img,4,1.0,none,sift,incremental,50,0,0.0,0,0,,,,4.13,14.15,0.08,0.0,0.0,0.0,,,,,,54.7
+e2_generative,gerrard-hall,sdturbo_img2img_s4_f1.0_none_sift-incremental,2,sdturbo_img2img,4,1.0,none,sift,incremental,50,0,0.0,0,0,,,,4.28,14.94,0.07,0.0,0.0,0.0,,,,,,54.0
+e2_generative,gerrard-hall,sdturbo_img2img_s5_f1.0_none_sift-incremental,0,sdturbo_img2img,5,1.0,none,sift,incremental,50,0,0.0,0,0,,,,5.56,26.53,0.31,0.0,0.0,0.0,,,,,,78.8
+e2_generative,gerrard-hall,sdturbo_img2img_s5_f1.0_none_sift-incremental,1,sdturbo_img2img,5,1.0,none,sift,incremental,50,0,0.0,0,0,,,,5.43,27.94,0.07,0.0,0.0,0.0,,,,,,79.7
+e2_generative,gerrard-hall,sdturbo_img2img_s5_f1.0_none_sift-incremental,2,sdturbo_img2img,5,1.0,none,sift,incremental,50,0,0.0,0,0,,,,5.87,27.56,0.09,0.0,0.0,0.0,,,,,,80.7
