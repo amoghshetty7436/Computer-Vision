@@ -68,7 +68,9 @@ def sd_x4_upscale(low, factor, tile=192):
         for x0 in range(0, w, tile):
             patch = low[y0:y0 + tile, x0:x0 + tile]
             ph, pw = patch.shape[:2]
-            up = pipe(prompt="a high quality photo", image=Image.fromarray(patch), num_inference_steps=20,
+            # the upscaler works on multiples of 8: pad edge tiles (reflect), crop after
+            padded = cv2.copyMakeBorder(patch, 0, (-ph) % 8, 0, (-pw) % 8, cv2.BORDER_REFLECT_101)
+            up = pipe(prompt="a high quality photo", image=Image.fromarray(padded), num_inference_steps=20,
                       noise_level=20).images[0]
             out[y0 * 4:y0 * 4 + ph * 4, x0 * 4:x0 * 4 + pw * 4] = np.asarray(up)[:ph * 4, :pw * 4]
     if factor == 4:
