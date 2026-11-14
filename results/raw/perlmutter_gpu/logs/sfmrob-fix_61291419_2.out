@@ -1,0 +1,46 @@
+[all] 1 runs (0 already done)
+/pscratch/sd/a/avs97/sfmrob/code/sfmrob/learned.py:60: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:208.)
+  x = torch.from_numpy(np.asarray(Image.open(Path(image_dir) / n).convert("RGB"))).permute(2, 0, 1)
+[e6_methods] clean_s0_f1.0_none_aliked_lg-incremental seed=0 reg=40/40 auc@10=0.294 (67.6s)
+camera CameraModelId.SIMPLE_RADIAL 1024 768 [ 8.548e+02  5.120e+02  3.840e+02 -2.100e-02]
+  0 P1180141.JPG         rot   89.24  trans   16.74
+  1 P1180144.JPG         rot   89.31  trans   26.98
+  2 P1180148.JPG         rot   89.36  trans   57.12
+  3 P1180151.JPG         rot   89.09  trans   37.20
+  4 P1180154.JPG         rot   89.36  trans   31.98
+  5 P1180157.JPG         rot   91.38  trans   57.22
+  6 P1180161.JPG         rot   91.40  trans   56.58
+  7 P1180164.JPG         rot   91.41  trans   51.77
+  8 P1180167.JPG         rot   91.21  trans   48.71
+  9 P1180170.JPG         rot   91.03  trans   54.51
+ 10 P1180174.JPG         rot   91.02  trans   48.49
+ 11 P1180177.JPG         rot   91.03  trans   43.90
+ 12 P1180180.JPG         rot   91.00  trans   51.90
+ 13 P1180183.JPG         rot   91.13  trans   53.46
+ 14 P1180187.JPG         rot   91.40  trans   28.25
+ 15 P1180190.JPG         rot   91.42  trans   31.82
+ 16 P1180193.JPG         rot   91.12  trans   33.88
+ 17 P1180196.JPG         rot   91.15  trans   38.48
+ 18 P1180200.JPG         rot   89.13  trans   52.27
+ 19 P1180203.JPG         rot   89.15  trans   36.80
+ 20 P1180206.JPG         rot   89.19  trans   44.39
+ 21 P1180209.JPG         rot   89.14  trans   46.09
+ 22 P1180213.JPG         rot   89.25  trans   35.20
+ 23 P1180216.JPG         rot   89.32  trans   36.01
+ 24 P1180219.JPG         rot   89.28  trans   33.03
+ 25 P1180222.JPG         rot   89.26  trans    6.33
+ 26 P1180305.JPG         rot   91.18  trans   31.82
+ 27 P1180308.JPG         rot   91.10  trans   37.33
+ 28 P1180311.JPG         rot   89.11  trans   21.90
+ 29 P1180314.JPG         rot   89.14  trans   32.47
+ 30 P1180318.JPG         rot   89.15  trans   43.28
+ 31 P1180321.JPG         rot   89.33  trans   25.03
+ 32 P1180324.JPG         rot   89.28  trans   28.70
+ 33 P1180327.JPG         rot   89.23  trans   23.48
+ 34 P1180331.JPG         rot   88.25  trans   49.03
+ 35 P1180334.JPG         rot   89.22  trans   33.76
+ 36 P1180337.JPG         rot   91.34  trans   57.32
+ 37 P1180340.JPG         rot   91.40  trans   61.73
+ 38 P1180344.JPG         rot   91.42  trans   52.90
+ 39 P1180347.JPG         rot   91.20  trans   47.47
+images with median rot err > 10 deg: 40 of 40

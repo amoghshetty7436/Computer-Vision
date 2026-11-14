@@ -1,0 +1,2 @@
+exp,scene,cond,seed,perturb,severity,frac,mitigation,features,mapper,n_input,n_reg,reg_frac,n_models,n_points3D,mean_track_len,mean_reproj_err,obs_per_image,extract_s,match_s,map_s,auc@5,auc@10,auc@20,med_rot_err,med_trans_err,ate_rel,ate_abs,error,wall_s
+e6_methods,south-building,clean_s0_f1.0_none_aliked_lg-incremental,0,clean,0,1.0,none,aliked_lg,incremental,40,40,1.0,1,19909,4.672208548897483,0.6517912246528348,2325.475,3.44,25.54,38.4,0.28491025641025636,0.2937820512820512,0.29824358974358967,91.03319338620564,39.40130212869333,1.240609565793123,4.505035325534243,,67.6

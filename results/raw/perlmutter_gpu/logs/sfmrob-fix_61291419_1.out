@@ -1,0 +1,56 @@
+[all] 1 runs (0 already done)
+/pscratch/sd/a/avs97/sfmrob/code/sfmrob/learned.py:49: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:208.)
+  x = torch.from_numpy(np.asarray(Image.open(Path(image_dir) / n).convert("RGB"))).permute(2, 0, 1)
+[e6_methods] clean_s0_f1.0_none_aliked_lg-incremental seed=0 reg=50/50 auc@10=0.232 (83.8s)
+camera CameraModelId.SIMPLE_RADIAL 1024 683 [ 6.96332e+02  5.12000e+02  3.41500e+02 -5.60000e-02]
+  0 IMG_2331.JPG         rot  103.53  trans   49.87
+  1 IMG_2333.JPG         rot  103.60  trans   52.74
+  2 IMG_2335.JPG         rot  103.52  trans   49.70
+  3 IMG_2337.JPG         rot   78.27  trans   47.13
+  4 IMG_2339.JPG         rot   78.26  trans   47.32
+  5 IMG_2341.JPG         rot   78.30  trans   42.53
+  6 IMG_2343.JPG         rot   78.31  trans   31.71
+  7 IMG_2345.JPG         rot   78.35  trans   34.46
+  8 IMG_2347.JPG         rot   78.38  trans   40.24
+  9 IMG_2349.JPG         rot   78.46  trans   39.39
+ 10 IMG_2351.JPG         rot   78.53  trans   33.07
+ 11 IMG_2353.JPG         rot   78.54  trans   26.86
+ 12 IMG_2355.JPG         rot   78.55  trans   36.46
+ 13 IMG_2357.JPG         rot   78.56  trans   36.33
+ 14 IMG_2359.JPG         rot   78.55  trans   38.08
+ 15 IMG_2361.JPG         rot   78.56  trans   35.13
+ 16 IMG_2363.JPG         rot   78.93  trans   40.80
+ 17 IMG_2365.JPG         rot   78.87  trans   41.44
+ 18 IMG_2367.JPG         rot   78.82  trans   41.55
+ 19 IMG_2369.JPG         rot   78.80  trans   40.86
+ 20 IMG_2371.JPG         rot   78.66  trans   40.49
+ 21 IMG_2373.JPG         rot   78.59  trans   38.81
+ 22 IMG_2375.JPG         rot   78.29  trans   36.21
+ 23 IMG_2377.JPG         rot   78.46  trans   35.88
+ 24 IMG_2379.JPG         rot   78.42  trans   32.78
+ 25 IMG_2382.JPG         rot   78.29  trans   26.16
+ 26 IMG_2384.JPG         rot   78.25  trans   16.49
+ 27 IMG_2386.JPG         rot   63.33  trans   36.64
+ 28 IMG_2388.JPG         rot   78.23  trans   18.34
+ 29 IMG_2390.JPG         rot   78.19  trans   18.85
+ 30 IMG_2392.JPG         rot   77.85  trans   19.58
+ 31 IMG_2394.JPG         rot   78.11  trans   20.06
+ 32 IMG_2396.JPG         rot   78.09  trans   21.08
+ 33 IMG_2398.JPG         rot   78.09  trans   23.48
+ 34 IMG_2400.JPG         rot   77.94  trans   21.91
+ 35 IMG_2402.JPG         rot  103.40  trans   49.15
+ 36 IMG_2404.JPG         rot  103.98  trans   48.26
+ 37 IMG_2406.JPG         rot  103.93  trans   52.35
+ 38 IMG_2408.JPG         rot  103.94  trans   63.15
+ 39 IMG_2410.JPG         rot  103.82  trans   53.86
+ 40 IMG_2412.JPG         rot  103.85  trans   50.28
+ 41 IMG_2414.JPG         rot  103.96  trans   50.33
+ 42 IMG_2416.JPG         rot  103.89  trans   49.23
+ 43 IMG_2418.JPG         rot  103.71  trans   56.65
+ 44 IMG_2420.JPG         rot  103.71  trans   59.86
+ 45 IMG_2422.JPG         rot  103.68  trans   62.16
+ 46 IMG_2424.JPG         rot  103.48  trans   47.90
+ 47 IMG_2426.JPG         rot  103.52  trans   41.44
+ 48 IMG_2428.JPG         rot  103.51  trans   51.25
+ 49 IMG_2430.JPG         rot  103.54  trans   57.37
+images with median rot err > 10 deg: 50 of 50

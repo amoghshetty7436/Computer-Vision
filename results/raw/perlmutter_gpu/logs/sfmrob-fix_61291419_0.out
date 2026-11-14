@@ -1,0 +1,7 @@
+[all] 2 runs (0 already done)
+[transformers] `CLIPImageProcessor` requires torchvision (not installed); falling back to `CLIPImageProcessorPil` for backward compatibility. Install torchvision to use the default backend, or import `CLIPImageProcessorPil` directly to silence this warning.
+/pscratch/sd/a/avs97/sfmrob/venv/lib/python3.13/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+[e3_superres] sr_sd_x4_s4_f1.0_none_sift-incremental seed=0 reg=21/50 auc@10=0.145 (270.7s)
+E20261114 11:47:07.934607 140681117834112 sfm.cc:310] Failed to create any sparse model
+[e3_superres] sr_sd_x4_s8_f1.0_none_sift-incremental seed=0 reg=0/50 auc@10=0.000 (75.4s)
