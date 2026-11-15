@@ -171,12 +171,13 @@ which isolates the learned matcher (LightGlue) from the learned features.
 | night s3 | 0.37 | 0.41 | **0.49** | 0.39 | 0.18 | 0.21 |
 | fog s5 | 0.20 | 0.30 | 0.29 | **0.41** | 0.13 | 0.16 |
 | crowds s4 | 0.11 | **0.34** | 0.33 | 0.01 | 0.09 | 0.07 |
-| LaMa inpaint s3 | SIFT_LAMA | 0.34 | **0.49** | SIFT_LAMA_G | 0.19 | 0.20 |
-| Real-ESRGAN SR ×8 | SIFT_SR | **0.41** | 0.23 | SIFT_SR_G | 0.09 | 0.06 |
+| LaMa inpaint s3 | **0.63** | 0.34 | 0.49 | 0.39 | 0.19 | 0.20 |
+| Real-ESRGAN SR ×8 | 0.00 | **0.41** | 0.23 | 0.03 | 0.09 | 0.06 |
 
 * **Learned features trade clean accuracy for robustness.** On clean photos SIFT is far better (0.96 vs 0.35 to 0.56).
   Under noise, crowds, blur and generative SR, ALIKED is 3 to 4× better, and LightGlue is the only pipeline that
-  survives motion blur.
+  survives motion blur. The gap is largest for GAN super-resolution (0.41 vs 0.00 for SIFT). The exception is LaMa
+  inpainting, which keeps real texture outside the holes: there SIFT stays best (0.63).
 * **Why ALIKED is poor on clean photos: symmetry, not noise.** Every image registers and the reprojection error is low
   (0.6 to 0.7 px), but the reconstruction is wrong in a structured way. On South Building every image has a median
   relative-rotation error of 89° or 91°. This is consistent with views of one facade being registered onto a

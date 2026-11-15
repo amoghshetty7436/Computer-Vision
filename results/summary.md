@@ -169,10 +169,10 @@ Metric: pose AUC@10° over all input image pairs (unregistered = failure) and re
 | crowd_s4          |              0.086 |                   0.335 |              0.067 |                   0.328 |         0.01  |              0.109 |
 | fog_s5            |              0.128 |                   0.296 |              0.162 |                   0.291 |         0.414 |              0.201 |
 | gaussian_noise_s4 |              0.145 |                   0.399 |              0.116 |                   0.459 |         0.273 |              0.089 |
-| inpaint_lama_s3   |              0.189 |                   0.344 |              0.196 |                   0.493 |       nan     |            nan     |
+| inpaint_lama_s3   |              0.189 |                   0.344 |              0.196 |                   0.493 |         0.393 |              0.628 |
 | motion_blur_s3    |              0.035 |                   0.278 |              0.02  |                   0.029 |         0.041 |              0     |
 | night_s3          |              0.181 |                   0.406 |              0.212 |                   0.486 |         0.394 |              0.367 |
-| sr_realesrgan_s8  |              0.086 |                   0.407 |              0.061 |                   0.227 |       nan     |            nan     |
+| sr_realesrgan_s8  |              0.086 |                   0.407 |              0.061 |                   0.227 |         0.025 |              0     |
 
 
 ## E1  Real weather (Boreas)
