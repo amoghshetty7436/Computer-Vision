@@ -8,6 +8,8 @@ COLMAP was evaluated on clean internet photo collections. We test it in settings
 real bad weather, desert conditions, image corruptions, generative AI edits, super-resolved inputs, and
 crowds of tourists. For each setting we state in advance why it might fail and why it might still work.
 
+* **Short illustrated report (open in a browser): [`docs/report.html`](docs/report.html)**
+* **Full technical report (PDF): [`docs/SfM_robustness_full_report.pdf`](docs/SfM_robustness_full_report.pdf)**
 * **Write-up with results and conjectures: [`REPORT.md`](REPORT.md)**
 * Results: [`results/summary.md`](results/summary.md) (auto-generated) and figures in [`results/figures/`](results/figures)
 * Related work and hypotheses from the literature: [`docs/related_work.md`](docs/related_work.md)

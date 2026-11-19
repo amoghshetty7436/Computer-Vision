@@ -1,0 +1,253 @@
+<title>Where SfM Breaks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: one reading column, figures break slightly wider; each experiment is a self-contained block */
+:root{
+  --bg:#f7f8fa; --surface:#ffffff; --fg:#1b2230; --muted:#5b6475; --line:#dfe3ea;
+  --accent:#1f5fa8; --accent-soft:#e7eef8; --good:#237a4b; --warn:#a76a12; --bad:#b23a32;
+  --display:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --surface:#1a2029; --fg:#e6e9ef; --muted:#a2abba; --line:#2c3440;
+  --accent:#7fb2ea; --accent-soft:#1d2a3b; --good:#5cc48b; --warn:#e2a84f; --bad:#ee7a70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --surface:#1a2029; --fg:#e6e9ef; --muted:#a2abba; --line:#2c3440;
+  --accent:#7fb2ea; --accent-soft:#1d2a3b; --good:#5cc48b; --warn:#e2a84f; --bad:#ee7a70; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.9rem,5vw,2.7rem);letter-spacing:-.01em}
+h2{font-size:1.55rem;margin-top:56px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font-size:1.1rem;margin-top:24px}
+p{margin:10px 0;max-width:68ch}
+ul,ol{padding-left:22px;max-width:68ch}
+li{margin:4px 0}
+a{color:var(--accent)}
+.eyebrow{font:600 .75rem/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:1.1rem;color:var(--muted)}
+.findings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:24px 0}
+@media (max-width:560px){.findings{grid-template-columns:1fr}}
+.finding{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.finding b{display:block;font-family:var(--display);font-size:1.05rem;margin-bottom:4px}
+.finding span{color:var(--muted);font-size:.95rem}
+figure{margin:18px 0}
+figure img{display:block;width:100%;max-width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+figcaption{color:var(--muted);font-size:.9rem;margin-top:6px;max-width:72ch}
+.q{background:var(--accent-soft);border-radius:8px;padding:12px 16px;margin:14px 0}
+.q b{color:var(--accent)}
+.result{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:14px 0}
+.tbl{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;font-size:.92rem;background:var(--surface);min-width:100%}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;font-variant-numeric:tabular-nums}
+th{font-weight:600}
+.score{font-family:var(--display);font-weight:600}
+details{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 16px;margin:12px 0}
+summary{cursor:pointer;font-weight:600}
+summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+dl{margin:8px 0}
+dt{font-weight:600;margin-top:10px}
+dd{margin:2px 0 0 0;color:var(--muted)}
+.foot{color:var(--muted);font-size:.9rem;margin-top:48px}
+</style>
+
+<div class="wrap">
+<span class="eyebrow">CS 5672 · Cornell · Fall 2026</span>
+<h1>Where does 3D reconstruction from photos break?</h1>
+<p class="lede">We stress-tested COLMAP, the most widely used tool for turning a set of photos into a 3D model, under bad weather, desert conditions, image noise, AI photo edits, AI upscaling and tourist crowds. We ran about 1,400 reconstructions.</p>
+
+<div class="findings">
+  <div class="finding"><b>Night is the real enemy</b><span>Real night photos score 0.02 out of 1. Rain and snow during the day barely matter.</span></div>
+  <div class="finding"><b>AI edits break 3D</b><span>A Stable Diffusion edit you can barely see drops the score from 0.96 to 0.00.</span></div>
+  <div class="finding"><b>AI upscaling hurts</b><span>Plain bicubic upscaling beats AI super-resolution (0.31 vs 0.11).</span></div>
+  <div class="finding"><b>Crowds fail silently</b><span>With 40 people per photo, 89% of photos still get placed, but in the wrong spots (score 0.04).</span></div>
+</div>
+
+<h2>The problem</h2>
+<p><b>Structure from Motion (SfM)</b> takes ordinary photos of a place, taken from different spots, and works out two things: where each photo was taken from, and a 3D model of the scene. It powers 3D maps, virtual tours, heritage preservation, film effects, AR apps and robot navigation.</p>
+<p><b>COLMAP</b> (Schönberger &amp; Frahm, CVPR 2016) is the standard SfM tool and the paper this project is about. It was shown to work on clean tourist photos in daylight. Real photos are often taken at night, in rain, fog or sandstorms, in crowds, or after an AI app has "enhanced" them. The paper doesn't test any of that, so we did.</p>
+
+<figure>
+  <img src="{{reconstruction_topdown.png}}" alt="Top-down view of two 3D point clouds with camera positions circling each building">
+  <figcaption>What SfM produces. Grey dots are 3D points on the building walls, seen from above. Red dots are where each photo was taken. COLMAP recovered all of this from the photos alone. These full reconstructions serve as our "true answer".</figcaption>
+</figure>
+
+<h2>The data</h2>
+<p>We used two building photo sets released with COLMAP, plus real driving footage recorded in many kinds of weather.</p>
+<figure>
+  <img src="{{dataset_samples.jpg}}" alt="Eight photos: four of Gerrard Hall and four of South Building from different angles">
+  <figcaption><b>Gerrard Hall</b> (50 photos) and <b>South Building</b> (40 photos), both at the University of North Carolina, resized to 1024 pixels. We add each corruption to these photos in a controlled way.</figcaption>
+</figure>
+<figure>
+  <img src="{{boreas_conditions.jpg}}" alt="Grid of road photos from the same Toronto route in sun, overcast, snow, rain and night">
+  <figcaption><b>Boreas</b>: the same Toronto driving route recorded on 15 days over a year, in sun, overcast, snow, rain and night, with GPS-accurate camera positions. This is <i>real</i> weather, so we can check whether fake weather behaves like the real thing.</figcaption>
+</figure>
+
+<h2>How SfM works, and how we score it</h2>
+<ol>
+  <li><b>Find keypoints.</b> Distinctive spots like window corners and brick edges, about 8,000 per photo, found with an algorithm called SIFT.</li>
+  <li><b>Match them</b> between every pair of photos.</li>
+  <li><b>Throw out wrong matches</b> with RANSAC, a voting method that keeps only matches that agree on one consistent camera geometry.</li>
+  <li><b>Place the cameras</b> one photo at a time and build the 3D points. A photo that gets placed is called <b>registered</b>.</li>
+</ol>
+<figure>
+  <img src="{{matches_examples.jpg}}" alt="Three image pairs with green lines connecting matched points: clean, night and crowded">
+  <figcaption>Matches that survive RANSAC (green lines) between two neighbouring photos. <b>Clean:</b> 156 good matches, all roughly parallel, as they should be. <b>Night:</b> fewer matches, and many are plainly wrong (the fan of lines). <b>Crowd:</b> plenty of matches, but most sit on pasted people who move between photos, so they describe the wrong geometry.</figcaption>
+</figure>
+
+<h3>The score: AUC@10</h3>
+<p>For every pair of photos we compare how the camera moved between the two shots (how much it turned, and in which direction it moved) with the true movement. Each pair gets credit from 0 to 1:</p>
+<div class="tbl"><table>
+<tr><th>Error for a pair</th><td>0°</td><td>1°</td><td>5°</td><td>9°</td><td>10° or more</td><td>photo not placed</td></tr>
+<tr><th>Credit</th><td>1.0</td><td>0.9</td><td>0.5</td><td>0.1</td><td>0</td><td>0</td></tr>
+</table></div>
+<p><b>AUC@10 is the average credit over all pairs.</b> 1.0 is perfect, and clean photos score <b>0.96</b>. A photo that couldn't be placed scores 0 in every pair it belongs to, so a method can't look good by quietly dropping hard photos. We also report the <b>registered fraction</b>, the share of photos that got placed at all. A high registered fraction with a low AUC is a <b>silent failure</b>: the model looks complete but is wrong.</p>
+<p>Every setting was run 3 times (different random seeds) on both buildings, and we report the average of those 6 runs.</p>
+
+<h2>Experiment 1: Weather and desert</h2>
+<div class="q"><b>Question:</b> How badly do rain, snow, fog, night and desert conditions (sandstorm, heat shimmer, harsh sun) hurt SfM? Does simulated weather behave like real weather?</div>
+<figure>
+  <img src="{{weather_examples.jpg}}" alt="One photo shown clean and under seven synthetic weather effects">
+  <figcaption>The synthetic weather effects we built, shown at medium strength (s3 on a 1 to 5 scale). Fog and sandstorm get thicker with distance, as in real air.</figcaption>
+</figure>
+<figure>
+  <img src="{{e1_real_weather.png}}" alt="Bar chart of AUC by real weather condition on Boreas">
+  <figcaption>Real weather on Boreas.</figcaption>
+</figure>
+<div class="result">
+<ul>
+  <li><b>Real night is the only real condition that breaks SfM</b> (0.02). Rain (0.87) and snow on the ground (0.88) are fine.</li>
+  <li><b>Desert:</b> heat shimmer is almost harmless (0.77 even at maximum). Harsh sun, which washes out detail, is the worst desert effect.</li>
+  <li><b>Fake weather misleads.</b> Simulated fog and snow are much harsher than the real thing, and simulated night is much milder (0.33 vs 0.02 for real night).</li>
+</ul>
+</div>
+
+<h2>Experiment 2: Noise that gets stronger, ordinary vs AI-generated</h2>
+<div class="q"><b>Question:</b> As damage to the photos increases, where does SfM break? Do AI edits fail differently from ordinary noise and blur?</div>
+<figure>
+  <img src="{{noise_examples.jpg}}" alt="Eight versions of a photo with noise, blur, JPEG, pixelation, low contrast and underexposure">
+  <figcaption>Ordinary ("analytic") damage at medium strength.</figcaption>
+</figure>
+<figure>
+  <img src="{{generative_examples.jpg}}" alt="A crop shown clean, with grey holes, with holes filled by AI, and regenerated by a GAN">
+  <figcaption>AI edits. <b>LaMa</b> fills holes with made-up content; the grey-hole version is a control that removes the same areas without inventing anything. <b>Real-ESRGAN</b> re-draws all the fine detail.</figcaption>
+</figure>
+<figure>
+  <img src="{{sdturbo_strength_examples.jpg}}" alt="A photo redrawn by Stable Diffusion at increasing strength">
+  <figcaption><b>Stable Diffusion</b> (SD-Turbo) redrawing the photo, from the original on the left to stronger edits on the right. At the lightest setting it looks almost identical, and SfM still fails completely.</figcaption>
+</figure>
+<figure>
+  <img src="{{e2_generative.png}}" alt="Line chart of AUC versus severity for each AI edit">
+</figure>
+<div class="result">
+<ul>
+  <li><b>Motion blur and JPEG are the worst ordinary damage.</b> Light motion blur already drops the score to 0.60.</li>
+  <li><b>The lightest Stable Diffusion edit scores 0.00.</b> 70% of the keypoints survive, but the model redraws brick and leaves differently in every photo, so they stop matching: good matches on one pair fell from 344 to 17.</li>
+  <li><b>LaMa inpainting is harmless</b> compared with grey holes, because its fills are smooth and SIFT mostly ignores them.</li>
+  <li>The rule we found: <b>the more fine texture an AI invents, the more it hurts 3D</b>, however real the photo looks.</li>
+</ul>
+</div>
+
+<h2>Experiment 3: AI upscaling before SfM</h2>
+<div class="q"><b>Question:</b> If the photos are low resolution, does an AI super-resolution model help SfM?</div>
+<figure>
+  <img src="{{superres_examples.jpg}}" alt="A crop shown original, 4x smaller, bicubic upscaled and Real-ESRGAN upscaled">
+  <figcaption>Real-ESRGAN looks sharper than bicubic, but much of that sharpness is invented.</figcaption>
+</figure>
+<figure>
+  <img src="{{e3_superres.png}}" alt="Bar chart of AUC for each upscaling method">
+</figure>
+<div class="result">
+<ul>
+  <li>At 4× upscaling: <b>bicubic 0.31</b>, Real-ESRGAN 0.11, Stable Diffusion upscaler 0.10, raw low-res 0.02.</li>
+  <li>Plain upscaling helps a lot. <b>AI upscaling is worse than plain upscaling</b>, because it invents different detail in each photo.</li>
+</ul>
+</div>
+
+<h2>Experiment 4: Tourist crowds</h2>
+<div class="q"><b>Question:</b> How many tourists does it take to break SfM, and do the usual fixes work?</div>
+<figure>
+  <img src="{{crowd_examples.jpg}}" alt="A photo with 10 and 40 pasted people, then the people masked in pink, then erased by LaMa">
+  <figcaption>We paste real people (from the COCO dataset) into every photo, at new positions each time, the way tourists move. Two fixes: <b>mask</b> the people so SfM ignores them, or <b>erase</b> them with LaMa.</figcaption>
+</figure>
+<figure>
+  <img src="{{e4_crowds.png}}" alt="Chart of AUC versus crowd size for no fix, mask and LaMa removal">
+</figure>
+<div class="result">
+<ul>
+  <li><b>40 people per photo: score 0.04, yet 89% of photos still get placed.</b> This is a silent failure.</li>
+  <li>Masking and AI erasing help equally (0.32 each). The cheap fix, a mask, is enough.</li>
+</ul>
+</div>
+
+<h2>Experiment 5: How many bad photos does it take?</h2>
+<div class="q"><b>Question:</b> If only some photos are bad, do they just drop out, or do they spoil the good ones too?</div>
+<figure>
+  <img src="{{e5_contamination.png}}" alt="Chart of AUC versus share of corrupted photos for four corruption types">
+</figure>
+<div class="result">
+<ul>
+  <li><b>Bad photos spoil good ones.</b> With just 10% of photos motion-blurred, the score falls from 0.92 to 0.60.</li>
+  <li>LaMa-edited photos are tolerated until about half the set.</li>
+  <li>Takeaway: filtering out bad photos before running SfM is cheap and very effective.</li>
+</ul>
+</div>
+
+<h2>Experiment 6: Do modern AI features fix it?</h2>
+<div class="q"><b>Question:</b> Which part fails: the keypoints, the matcher or the camera-placing step? Would modern learned methods (ALIKED keypoints, the LightGlue matcher, the GLOMAP global solver) do better?</div>
+<figure>
+  <img src="{{e6_methods.png}}" alt="Heatmap of AUC for each condition and each combination of features and mapper">
+  <figcaption>Rows are conditions, columns are pipelines. Darker blue means better. "sift+incremental" is standard COLMAP.</figcaption>
+</figure>
+<div class="result">
+<ul>
+  <li><b>On clean photos, classic COLMAP wins easily</b> (0.96 vs 0.35 to 0.56 for the learned pipelines).</li>
+  <li><b>On damaged photos, learned features win</b>, often by 3 to 4×. LightGlue is the only pipeline that survives motion blur (0.28), and on AI-upscaled photos it scores 0.41 against SIFT's 0.00.</li>
+  <li>The learned matcher gets confused by <b>look-alike facades</b>: it confidently matches one side of the building to another and places whole groups of photos about 90° off. GLOMAP has the same problem.</li>
+</ul>
+</div>
+
+<h2>Experiment 7: Does a sunny-day map work in other seasons?</h2>
+<div class="q"><b>Question:</b> If you build a map on a sunny day, can you still locate new photos taken in snow, rain or at night? This is what self-driving cars and AR need.</div>
+<figure>
+  <img src="{{e7_xseason.png}}" alt="Bar chart of how many query photos register into a sunny map, by condition">
+</figure>
+<div class="result">
+<ul>
+  <li>Overcast, snow and rain photos are located well: 87% to 97% get placed, with scores of 0.76 to 0.90.</li>
+  <li><b>Not one of 240 night photos could be located</b> in the daytime map.</li>
+</ul>
+</div>
+
+<h2>What it all means</h2>
+<ol>
+  <li><b>Night</b> is the condition that really breaks SfM, and simulating it underestimates how bad it is.</li>
+  <li><b>AI-edited and AI-upscaled photos</b> can look perfect and still be useless for 3D.</li>
+  <li><b>Many failures are silent.</b> Checking how many photos got placed isn't enough.</li>
+  <li><b>A few bad photos spoil the rest</b>, so filter before you reconstruct.</li>
+  <li><b>No method wins everywhere.</b> Classic COLMAP is best on clean photos, learned methods are best on damaged ones, and learned matching struggles with symmetric buildings.</li>
+</ol>
+
+<details>
+<summary>Glossary</summary>
+<dl>
+<dt>Pose</dt><dd>Where a camera was and which way it pointed.</dd>
+<dt>Keypoint / feature</dt><dd>A distinctive spot in a photo that can be found again in another photo.</dd>
+<dt>SIFT</dt><dd>The classic hand-designed keypoint method (2004) that COLMAP uses.</dd>
+<dt>RANSAC</dt><dd>Repeatedly guesses the geometry from a few random matches and keeps the guess most matches agree with. It's robust to random errors but can be fooled by consistent ones, such as look-alike facades.</dd>
+<dt>Registered / registered fraction</dt><dd>A photo that was placed in the model, and the share of photos placed.</dd>
+<dt>AUC@10</dt><dd>Average credit over all photo pairs: full credit for a perfect pair, falling to zero at 10° of error or when a photo isn't placed.</dd>
+<dt>Incremental vs global SfM</dt><dd>Incremental adds one photo at a time (COLMAP). Global solves all photos at once (GLOMAP).</dd>
+<dt>ALIKED, LightGlue</dt><dd>Neural-network keypoints and a neural-network matcher, used as published and not retrained.</dd>
+<dt>LaMa</dt><dd>A neural network that fills holes in an image.</dd>
+<dt>Real-ESRGAN</dt><dd>A GAN that enlarges images by inventing detail.</dd>
+<dt>Stable Diffusion / SD-Turbo</dt><dd>An AI image generator. Its "img2img" mode redraws an existing photo.</dd>
+<dt>Seed</dt><dd>A random-number setting. We repeat each run with 3 seeds.</dd>
+</dl>
+</details>
+
+<p class="foot">Nothing was trained in this project: every model was used as published. Computation ran in a cloud container (CPU) and on the NERSC Perlmutter supercomputer (about 2.8 GPU-hours). Code, raw results and the detailed PDF report: <a href="https://github.com/amoghshetty7436/Computer-Vision">github.com/amoghshetty7436/Computer-Vision</a>.</p>
+</div>
